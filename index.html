@@ -1,121 +1,179 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html lang="en" dir="ltr" data-theme="dark">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>محلل الأسهم الفني الفوري</title>
+<title>Technical Stock Analyzer - TradingView</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;800&display=swap" rel="stylesheet">
 <style>
-  :root{
-    --bg:#0a0f0d;
-    --panel:#111a15;
-    --panel-2:#0d1512;
-    --line:#1e2c24;
-    --green:#3ddc73;
-    --green-dim:#1f6b3f;
-    --red:#ef4a4a;
-    --amber:#f0b429;
-    --text:#eaf2ec;
-    --muted:#8ea99a;
+  :root[data-theme="dark"] {
+    --bg: #0b0e14;
+    --panel: #151922;
+    --panel-2: #1c2230;
+    --line: #2a3347;
+    --green: #26a69a;
+    --green-glow: rgba(38, 166, 154, 0.2);
+    --red: #ef5350;
+    --amber: #ffb74d;
+    --text: #f0f3f8;
+    --muted: #848e9c;
+    --accent: #2962ff;
   }
-  *{box-sizing:border-box;}
-  body{
-    margin:0;
-    background:var(--bg);
-    color:var(--text);
-    font-family:'Tajawal',sans-serif;
-    padding:20px;
+
+  :root[data-theme="slate"] {
+    --bg: #1e293b;
+    --panel: #0f172a;
+    --panel-2: #1e293b;
+    --line: #334155;
+    --green: #10b981;
+    --green-glow: rgba(16, 185, 129, 0.2);
+    --red: #f43f5e;
+    --amber: #f59e0b;
+    --text: #f8fafc;
+    --muted: #94a3b8;
+    --accent: #3b82f6;
   }
-  .wrap{max-width:760px;margin:0 auto;}
-  .toolbar{
-    display:flex;flex-wrap:wrap;gap:8px;align-items:center;
-    background:var(--panel);border:1px solid var(--line);border-radius:14px;
-    padding:14px;margin-bottom:14px;
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    padding: 20px;
+    transition: background 0.3s, color 0.3s;
   }
-  .toolbar input{
-    background:var(--panel-2);border:1px solid var(--line);color:var(--text);
-    border-radius:8px;padding:10px 14px;font-family:inherit;font-size:15px;flex:1;min-width:140px;
+  .wrap { max-width: 800px; margin: 0 auto; }
+  
+  /* Header & Controls */
+  .header {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 20px; flex-wrap: wrap; gap: 10px;
   }
-  .toolbar button{
-    background:var(--green);color:#04140a;border:none;border-radius:8px;
-    padding:10px 18px;font-family:inherit;font-weight:700;font-size:15px;cursor:pointer;
+  .header h1 { margin: 0; font-size: 22px; font-weight: 800; color: var(--text); }
+  .theme-switch {
+    display: flex; gap: 8px; background: var(--panel); padding: 4px; border-radius: 10px; border: 1px solid var(--line);
   }
-  .toolbar button.secondary{
-    background:transparent;color:var(--green);border:1px solid var(--green-dim);
+  .theme-btn {
+    background: transparent; border: none; color: var(--muted); padding: 6px 12px;
+    border-radius: 6px; cursor: pointer; font-size: 13px; font-family: inherit; font-weight: 700;
   }
-  .status{font-size:13px;color:var(--muted);width:100%;margin-top:4px;}
-  .status.err{color:var(--red);}
-  .card{
-    background:var(--panel);border:1px solid var(--line);border-radius:16px;
-    padding:18px;margin-bottom:14px;
+  .theme-btn.active { background: var(--accent); color: #fff; }
+
+  /* Search Toolbar */
+  .toolbar {
+    display: flex; flex-wrap: wrap; gap: 10px; align-items: center;
+    background: var(--panel); border: 1px solid var(--line); border-radius: 16px;
+    padding: 16px; margin-bottom: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.2);
   }
-  .card h2{margin:0 0 14px;font-size:16px;color:var(--muted);font-weight:700;display:flex;align-items:center;gap:8px;}
-  .head-row{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap;}
-  .title-block h1{margin:0;font-size:22px;font-weight:800;}
-  .title-block .ticker{color:var(--green);font-size:32px;font-weight:800;letter-spacing:1px;}
-  .date-box{background:var(--panel-2);border:1px solid var(--line);border-radius:10px;padding:8px 14px;font-size:13px;color:var(--muted);text-align:center;white-space:nowrap;}
-  .price-row{display:flex;gap:24px;align-items:baseline;margin-top:10px;flex-wrap:wrap;}
-  .price-row .last{font-size:38px;font-weight:800;}
-  .price-row .chg{font-size:20px;font-weight:700;}
-  .up{color:var(--green);}
-  .down{color:var(--red);}
-  .grid4{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;}
-  @media(min-width:520px){.grid4{grid-template-columns:repeat(4,1fr);}}
-  .stat{background:var(--panel-2);border:1px solid var(--line);border-radius:10px;padding:10px;text-align:center;}
-  .stat .lbl{font-size:12px;color:var(--muted);margin-bottom:4px;}
-  .stat .val{font-size:16px;font-weight:800;}
-  .levels{width:100%;border-collapse:collapse;font-size:14px;}
-  .levels td{padding:8px 4px;border-bottom:1px solid var(--line);}
-  .levels td:first-child{color:var(--muted);}
-  .levels td:last-child{text-align:left;font-weight:800;}
-  .notes li{margin-bottom:8px;line-height:1.7;font-size:14.5px;color:#d7e5dd;}
-  .rec-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;}
-  @media(min-width:520px){.rec-grid{grid-template-columns:repeat(4,1fr);}}
-  .stars{color:var(--green);font-size:20px;letter-spacing:2px;}
-  .stars .off{color:#2a3a30;}
-  .badge{display:inline-flex;align-items:center;gap:6px;background:var(--panel-2);border:1px solid var(--green-dim);color:var(--green);
-    border-radius:999px;padding:5px 14px;font-size:13px;font-weight:700;}
-  .footer-note{font-size:11.5px;color:var(--muted);text-align:center;line-height:1.8;margin-top:6px;}
-  #shareCanvas{width:100%;border-radius:12px;border:1px solid var(--line);display:block;}
-  .manual-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-top:10px;}
-  .manual-grid label{font-size:12px;color:var(--muted);display:block;margin-bottom:3px;}
-  .manual-grid input{width:100%;background:var(--panel-2);border:1px solid var(--line);color:var(--text);border-radius:8px;padding:8px;font-family:inherit;}
-  .hidden{display:none;}
-  .strategy-box{background:var(--panel-2);border-right:4px solid var(--green);padding:12px 16px;border-radius:6px;margin-bottom:12px;font-size:14px;line-height:1.6;}
+  .toolbar input {
+    background: var(--panel-2); border: 1px solid var(--line); color: var(--text);
+    border-radius: 10px; padding: 12px 16px; font-family: inherit; font-size: 16px; flex: 1; min-width: 160px;
+    outline: none; transition: border-color 0.2s;
+  }
+  .toolbar input:focus { border-color: var(--accent); }
+  .toolbar button {
+    background: var(--accent); color: #ffffff; border: none; border-radius: 10px;
+    padding: 12px 22px; font-family: inherit; font-weight: 800; font-size: 15px; cursor: pointer;
+    transition: transform 0.1s, opacity 0.2s;
+  }
+  .toolbar button:active { transform: scale(0.98); }
+  .toolbar button.secondary {
+    background: transparent; color: var(--text); border: 1px solid var(--line);
+  }
+  .status { font-size: 13.5px; color: var(--muted); width: 100%; margin-top: 4px; display: flex; align-items: center; gap: 6px; }
+  .status.err { color: var(--red); }
+
+  /* Cards */
+  .card {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 16px;
+    padding: 20px; margin-bottom: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  }
+  .card h2 { margin: 0 0 16px; font-size: 17px; color: var(--muted); font-weight: 700; display: flex; align-items: center; gap: 8px; }
+  .head-row { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; flex-wrap: wrap; }
+  .title-block .ticker { color: var(--green); font-size: 34px; font-weight: 800; letter-spacing: 0.5px; }
+  .date-box { background: var(--panel-2); border: 1px solid var(--line); border-radius: 10px; padding: 8px 14px; font-size: 13px; color: var(--muted); text-align: center; }
+  
+  .price-row { display: flex; gap: 20px; align-items: baseline; margin-top: 8px; flex-wrap: wrap; }
+  .price-row .last { font-size: 42px; font-weight: 800; }
+  .price-row .chg { font-size: 22px; font-weight: 700; }
+  .up { color: var(--green); }
+  .down { color: var(--red); }
+
+  .grid4 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+  @media(min-width: 540px){ .grid4 { grid-template-columns: repeat(4, 1fr); } }
+  .stat { background: var(--panel-2); border: 1px solid var(--line); border-radius: 12px; padding: 12px; text-align: center; }
+  .stat .lbl { font-size: 12.5px; color: var(--muted); margin-bottom: 6px; }
+  .stat .val { font-size: 17px; font-weight: 800; }
+
+  /* Levels */
+  .levels { width: 100%; border-collapse: collapse; font-size: 15px; }
+  .levels td { padding: 10px 6px; border-bottom: 1px solid var(--line); }
+  .levels tr:last-child td { border-bottom: none; }
+  .levels td:first-child { color: var(--muted); }
+  .levels td:last-child { text-align: right; font-weight: 800; }
+
+  .notes li { margin-bottom: 10px; line-height: 1.7; font-size: 15px; color: var(--text); }
+  
+  .badge {
+    display: inline-flex; align-items: center; gap: 6px; background: var(--panel-2);
+    border: 1px solid var(--line); border-radius: 999px; padding: 6px 16px; font-size: 14px; font-weight: 700;
+  }
+  .stars { color: var(--amber); font-size: 22px; letter-spacing: 2px; }
+  .stars .off { color: var(--line); }
+
+  .manual-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: 12px; }
+  .manual-grid label { font-size: 12px; color: var(--muted); display: block; margin-bottom: 4px; }
+  .manual-grid input { width: 100%; background: var(--panel-2); border: 1px solid var(--line); color: var(--text); border-radius: 8px; padding: 10px; font-family: inherit; }
+  
+  .hidden { display: none !important; }
+  .strategy-box {
+    background: var(--panel-2); border-left: 4px solid var(--accent); padding: 14px 18px; border-radius: 8px; margin-bottom: 14px; font-size: 14.5px; line-height: 1.7;
+  }
+  #shareCanvas { width: 100%; border-radius: 12px; border: 1px solid var(--line); display: block; margin-top: 10px; }
 </style>
 </head>
 <body>
 <div class="wrap">
 
-  <div class="toolbar">
-    <input id="tickerInput" placeholder="رمز السهم (مثل ORAS.CA أو FWRY.CA)" value="ORAS.CA">
-    <button id="fetchBtn">🔍 تحليل السهم الآن</button>
-    <button id="manualBtn" class="secondary">✍️ إدخال يدوي</button>
-    <div id="status" class="status">اكتب رمز السهم واضغط Enter أو زر "تحليل السهم الآن".</div>
-  </div>
-
-  <div id="manualPanel" class="card hidden">
-    <h2>إدخال أسعار الجلسة يدويًا</h2>
-    <div class="manual-grid">
-      <div><label>سعر الافتتاح</label><input id="m_open" type="number" step="0.01"></div>
-      <div><label>أعلى سعر</label><input id="m_high" type="number" step="0.01"></div>
-      <div><label>أدنى سعر</label><input id="m_low" type="number" step="0.01"></div>
-      <div><label>سعر الإغلاق / الحالي</label><input id="m_close" type="number" step="0.01"></div>
-      <div><label>إغلاق الجلسة السابقة</label><input id="m_prev" type="number" step="0.01"></div>
-      <div><label>حجم التداول (اختياري)</label><input id="m_vol" type="number" step="1"></div>
+  <div class="header">
+    <h1>📈 Technical Stock Analyzer (TradingView)</h1>
+    <div class="theme-switch">
+      <button class="theme-btn active" onclick="setTheme('dark', event)">Dark (Neon)</button>
+      <button class="theme-btn" onclick="setTheme('slate', event)">Modern Slate</button>
     </div>
-    <button id="applyManual" style="margin-top:12px;width:100%;background:var(--green);color:#04140a;border:none;border-radius:8px;padding:10px;font-family:inherit;font-weight:700;cursor:pointer;">توليد التحليل فوراً</button>
   </div>
 
+  <div class="toolbar">
+    <input id="tickerInput" placeholder="Ticker (e.g. FWRY, ORHD, ORAS)" value="FWRY">
+    <button id="fetchBtn">🔍 Analyze via TradingView</button>
+    <button id="manualBtn" class="secondary">✍️ Manual Entry</button>
+    <div id="status" class="status">Enter ticker symbol and press "Analyze".</div>
+  </div>
+
+  <!-- Manual Entry Fallback Panel -->
+  <div id="manualPanel" class="card hidden">
+    <h2>✍️ Manual Session Entry</h2>
+    <div class="manual-grid">
+      <div><label>Open Price</label><input id="m_open" type="number" step="0.01"></div>
+      <div><label>High Price</label><input id="m_high" type="number" step="0.01"></div>
+      <div><label>Low Price</label><input id="m_low" type="number" step="0.01"></div>
+      <div><label>Close / Last Price</label><input id="m_close" type="number" step="0.01"></div>
+      <div><label>Previous Close</label><input id="m_prev" type="number" step="0.01"></div>
+      <div><label>Volume</label><input id="m_vol" type="number" step="1"></div>
+    </div>
+    <button id="applyManual" style="margin-top:14px; width:100%; background:var(--green); color:#fff; border:none; border-radius:10px; padding:12px; font-family:inherit; font-weight:800; cursor:pointer;">Generate Analysis</button>
+  </div>
+
+  <!-- Main Analysis Section -->
   <div id="report" class="hidden">
 
     <div class="card">
       <div class="head-row">
         <div class="title-block">
-          <h1>تحليل فني للسهم</h1>
           <div class="ticker" id="outTicker">--</div>
-          <div style="color:var(--muted);font-size:15px;margin-top:2px;" id="outName">—</div>
+          <div style="color:var(--muted); font-size:15px; margin-top:2px;" id="outName">—</div>
         </div>
         <div class="date-box" id="outDate">—</div>
       </div>
@@ -123,60 +181,60 @@
         <div class="last" id="outLast">--</div>
         <div class="chg" id="outChg">--</div>
       </div>
-      <div class="grid4" style="margin-top:16px;">
-        <div class="stat"><div class="lbl">أعلى سعر</div><div class="val" id="outHigh">--</div></div>
-        <div class="stat"><div class="lbl">أدنى سعر</div><div class="val" id="outLow">--</div></div>
-        <div class="stat"><div class="lbl">الافتتاح</div><div class="val" id="outOpen">--</div></div>
-        <div class="stat"><div class="lbl">حجم التداول</div><div class="val" id="outVol">--</div></div>
+      <div class="grid4" style="margin-top:20px;">
+        <div class="stat"><div class="lbl">High</div><div class="val" id="outHigh">--</div></div>
+        <div class="stat"><div class="lbl">Low</div><div class="val" id="outLow">--</div></div>
+        <div class="stat"><div class="lbl">Open</div><div class="val" id="outOpen">--</div></div>
+        <div class="stat"><div class="lbl">Volume</div><div class="val" id="outVol">--</div></div>
       </div>
     </div>
 
     <div class="card">
-      <h2>🎯 مستويات الدعم والمقاومة (Pivot Points)</h2>
+      <h2>🎯 Support & Resistance Levels (Pivot Points)</h2>
       <table class="levels">
-        <tr><td>مقاومة 2 (R2)</td><td id="lvlR2" style="color:var(--red)">--</td></tr>
-        <tr><td>مقاومة 1 (R1)</td><td id="lvlR1" style="color:var(--red)">--</td></tr>
-        <tr><td>نقطة الارتكاز (Pivot)</td><td id="lvlP" style="color:var(--amber)">--</td></tr>
-        <tr><td>دعم 1 (S1)</td><td id="lvlS1" style="color:var(--green)">--</td></tr>
-        <tr><td>دعم 2 (S2)</td><td id="lvlS2" style="color:var(--green)">--</td></tr>
+        <tr><td>Resistance 2 (R2)</td><td id="lvlR2" style="color:var(--red)">--</td></tr>
+        <tr><td>Resistance 1 (R1)</td><td id="lvlR1" style="color:var(--red)">--</td></tr>
+        <tr><td>Pivot Point (PP)</td><td id="lvlP" style="color:var(--amber)">--</td></tr>
+        <tr><td>Support 1 (S1)</td><td id="lvlS1" style="color:var(--green)">--</td></tr>
+        <tr><td>Support 2 (S2)</td><td id="lvlS2" style="color:var(--green)">--</td></tr>
       </table>
     </div>
 
     <div class="card">
-      <h2>📊 تقييم اتجاه السهم</h2>
-      <div>
+      <h2>📊 Trend Evaluation</h2>
+      <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px;">
         <span class="badge" id="trendBadge">--</span>
-        <span class="stars" id="ratingStars" style="margin-inline-start:12px;"></span>
+        <span class="stars" id="ratingStars"></span>
       </div>
     </div>
 
     <div class="card">
-      <h2>👁️ الاستراتيجية المطبقة والنظرة الفنية</h2>
+      <h2>👁️ Technical Strategy & Insights</h2>
       <div class="strategy-box">
-        <strong>📋 استراتيجية Pivot Point Momentum:</strong><br>
-        تعتمد الاستراتيجية على تحديد اتجاه الحركة بناءً على موقع السعر من <strong>نقطة الارتكاز ($PP$)</strong>:
-        <br>• <strong>فوق الارتكاز:</strong> يعزز فرص الصعود واستهداف المقاومة $R_1$ ثم $R_2$ مع جعل $S_1$ مستوى وقف خسارة.
-        <br>• <strong>تحت الارتكاز:</strong> يشير إلى سيطرة الضغوط البيعية واستهداف الدعم $S_1$ ثم $S_2$.
+        <strong>📋 Pivot Point Momentum Strategy:</strong><br>
+        Monitors intraday direction based on positioning relative to the **Pivot Point (PP)**:
+        <br>• <strong>Above Pivot:</strong> Signals bullish momentum targeting $R_1$, then $R_2$.
+        <br>• <strong>Below Pivot:</strong> Indicates selling pressure targeting support levels $S_1$, then $S_2$.
       </div>
       <ul class="notes" id="techNotes"></ul>
     </div>
 
     <div class="card">
-      <h2>✅ ملخص التوصية والخطة الفنية</h2>
-      <div class="rec-grid">
-        <div class="stat"><div class="lbl">وقف الخسارة المقترح</div><div class="val" id="outStop" style="color:var(--red)">--</div></div>
-        <div class="stat"><div class="lbl">السعر المستهدف</div><div class="val" id="outTarget" style="color:var(--green)">--</div></div>
-        <div class="stat"><div class="lbl">العائد المتوقع</div><div class="val" id="outReturn">--</div></div>
-        <div class="stat"><div class="lbl">نسبة الثقة</div><div class="val" id="outConf">--</div></div>
+      <h2>✅ Plan Summary & Recommendation</h2>
+      <div class="grid4">
+        <div class="stat"><div class="lbl">Stop Loss</div><div class="val" id="outStop" style="color:var(--red)">--</div></div>
+        <div class="stat"><div class="lbl">Price Target</div><div class="val" id="outTarget" style="color:var(--green)">--</div></div>
+        <div class="stat"><div class="lbl">Est. Return</div><div class="val" id="outReturn">--</div></div>
+        <div class="stat"><div class="lbl">Confidence</div><div class="val" id="outConf">--</div></div>
       </div>
-      <div style="margin-top:14px;font-size:16px;font-weight:800;" id="outRecTitle">--</div>
+      <div style="margin-top:16px; font-size:16.5px; font-weight:800;" id="outRecTitle">--</div>
       <ul class="notes" id="recNotes" style="margin-top:8px;"></ul>
     </div>
 
     <div class="card">
-      <h2>🖼️ بطاقة التقرير القابلة للمشاركة</h2>
-      <canvas id="shareCanvas" width="1080" height="1400"></canvas>
-      <button id="downloadBtn" style="margin-top:12px;width:100%;background:var(--green);color:#04140a;border:none;border-radius:10px;padding:12px;font-family:inherit;font-weight:800;font-size:15px;cursor:pointer;">⬇️ تنزيل الصورة</button>
+      <h2>🖼️ Exportable Image Card</h2>
+      <canvas id="shareCanvas" width="1080" height="1350"></canvas>
+      <button id="downloadBtn" style="margin-top:14px; width:100%; background:var(--green); color:#fff; border:none; border-radius:10px; padding:14px; font-family:inherit; font-weight:800; font-size:16px; cursor:pointer;">⬇️ Download Report Image</button>
     </div>
 
   </div>
@@ -187,41 +245,95 @@
 let currentData = null;
 
 const $ = id => document.getElementById(id);
-const fmt = n => (n===null||n===undefined||isNaN(n)||!isFinite(n)) ? '--' : n.toFixed(2);
+const fmt = n => (n === null || n === undefined || isNaN(n) || !isFinite(n)) ? '--' : n.toFixed(2);
 
-function setStatus(msg, isErr){
+function setTheme(theme, e) {
+  document.documentElement.setAttribute('data-theme', theme);
+  document.querySelectorAll('.theme-btn').forEach(btn => btn.classList.remove('active'));
+  if (e && e.target) e.target.classList.add('active');
+  if (currentData) render(currentData);
+}
+
+function setStatus(msg, isErr) {
   const el = $('status');
   el.textContent = msg;
   el.className = 'status' + (isErr ? ' err' : '');
 }
 
-$('tickerInput').addEventListener('keypress', (e)=>{
-  if(e.key === 'Enter') runAnalysis();
+$('tickerInput').addEventListener('keypress', (e) => {
+  if (e.key === 'Enter') runAnalysis();
 });
 $('fetchBtn').addEventListener('click', runAnalysis);
 
-async function runAnalysis(){
-  const ticker = $('tickerInput').value.trim().toUpperCase();
-  if(!ticker){ setStatus('يرجى كتابة رمز السهم أولاً.', true); return; }
+// Fetch Data with CORS Proxy Handling
+async function fetchTradingView(ticker) {
+  let cleanSymbol = ticker.trim().toUpperCase().replace('.CA', '');
   
-  setStatus('⏳ جاري جلب وتحليل بيانات "' + ticker + '"...');
-  try{
-    const intradayResult = await fetchYahoo(ticker);
-    const built = buildFromYahoo(intradayResult, ticker);
+  const payload = {
+    "symbols": {
+      "tickers": [`EGX:${cleanSymbol}`],
+      "query": { "types": [] }
+    },
+    "columns": [
+      "name", "description", "close", "change", "change_abs", 
+      "high", "low", "open", "volume", "Value.Traded"
+    ]
+  };
+
+  const tvUrl = "https://scanner.tradingview.com/egypt/scan";
+  const proxyUrl = "https://corsproxy.io/?" + encodeURIComponent(tvUrl);
+
+  const response = await fetch(proxyUrl, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload)
+  });
+
+  if (!response.ok) throw new Error("TradingView service temporarily unavailable");
+  
+  const data = await response.json();
+  if (!data.data || data.data.length === 0) {
+    throw new Error(`Symbol "${cleanSymbol}" not found on EGX TradingView`);
+  }
+
+  const d = data.data[0].d;
+  const close = d[2];
+  const changeAbs = d[4];
+  const prevClose = close - changeAbs;
+
+  return {
+    ticker: `${cleanSymbol}.CA`,
+    name: d[1] || cleanSymbol,
+    close: d[2],
+    high: d[5] || close,
+    low: d[6] || close,
+    open: d[7] || prevClose,
+    prevClose: prevClose,
+    volume: d[8] || d[9] || 0
+  };
+}
+
+async function runAnalysis() {
+  const ticker = $('tickerInput').value.trim().toUpperCase();
+  if (!ticker) { setStatus('Please enter a valid ticker symbol.', true); return; }
+
+  setStatus('⏳ Fetching live prices from TradingView...');
+  try {
+    const built = await fetchTradingView(ticker);
     currentData = built;
     render(built);
-    setStatus('✅ تم التحليل بنجاح لـ ' + ticker);
-  }catch(err){
+    setStatus('✅ Live TradingView data loaded successfully');
+  } catch (err) {
     console.error(err);
-    setStatus('⚠️ تعذر الجلب التلقائي لرمز "' + ticker + '". جرب زر "إدخال يدوي".', true);
+    setStatus(`⚠️ ${err.message}. You can use "Manual Entry" as a fallback.`, true);
   }
 }
 
-$('manualBtn').addEventListener('click', ()=>{
+$('manualBtn').addEventListener('click', () => {
   $('manualPanel').classList.toggle('hidden');
 });
 
-$('applyManual').addEventListener('click', ()=>{
+$('applyManual').addEventListener('click', () => {
   const ticker = $('tickerInput').value.trim().toUpperCase() || 'STOCK';
   const o = parseFloat($('m_open').value);
   const h = parseFloat($('m_high').value);
@@ -230,75 +342,19 @@ $('applyManual').addEventListener('click', ()=>{
   const p = parseFloat($('m_prev').value) || c;
   const v = parseFloat($('m_vol').value) || null;
 
-  if([o,h,l,c].some(x=>isNaN(x))){
-    setStatus('يرجى أدخل القيم الفعلية للأسعار بشكل صحيح.', true);
+  if ([o, h, l, c].some(x => isNaN(x))) {
+    setStatus('Please input valid numeric values.', true);
     return;
   }
-  const built = { ticker, name: ticker, open:o, high:h, low:l, close:c, prevClose:p, volume:v };
+  const built = { ticker, name: ticker, open: o, high: h, low: l, close: c, prevClose: p, volume: v };
   currentData = built;
   render(built);
-  setStatus('✅ تم تحليل البيانات اليدوية.');
+  setStatus('✅ Report calculated using manual inputs.');
 });
 
-async function fetchYahoo(ticker){
-  const target = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(ticker)}?range=5d&interval=1d`;
-  const proxies = [
-    'https://corsproxy.io/?' + encodeURIComponent(target),
-    'https://api.allorigins.win/raw?url=' + encodeURIComponent(target)
-  ];
-  for(const url of proxies){
-    try{
-      const res = await fetch(url, {cache:'no-store'});
-      if(!res.ok) continue;
-      const json = await res.json();
-      const result = json?.chart?.result?.[0];
-      if(result) return result;
-    }catch(e){}
-  }
-  throw new Error('فشل جلب البيانات');
-}
+function computeAnalysis(d) {
+  const { open, high, low, close, prevClose } = d;
 
-function buildFromYahoo(res, ticker){
-  const meta = res.meta || {};
-  const q = res.indicators?.quote?.[0] || {};
-  
-  const closes = (q.close || []).filter(x => x !== null && !isNaN(x));
-  const highs = (q.high || []).filter(x => x !== null && !isNaN(x));
-  const lows = (q.low || []).filter(x => x !== null && !isNaN(x));
-  const opens = (q.open || []).filter(x => x !== null && !isNaN(x));
-
-  const last = meta.regularMarketPrice ?? closes.slice(-1)[0] ?? 0;
-  const prevClose = meta.chartPreviousClose ?? meta.previousClose ?? (closes.length > 1 ? closes[closes.length - 2] : last);
-
-  let dayHigh = meta.regularMarketDayHigh;
-  if (!dayHigh || isNaN(dayHigh)) {
-    dayHigh = highs.length > 0 ? Math.max(...highs) : Math.max(last, prevClose);
-  }
-
-  let dayLow = meta.regularMarketDayLow;
-  if (!dayLow || isNaN(dayLow)) {
-    dayLow = lows.length > 0 ? Math.min(...lows) : Math.min(last, prevClose);
-  }
-
-  const dayOpen = opens.slice(-1)[0] ?? meta.regularMarketDayOpen ?? prevClose;
-  
-  // حماية البيانات لضمان عدم خروج Infinity
-  dayHigh = Math.max(dayHigh, last, dayOpen);
-  dayLow = Math.min(dayLow, last, dayOpen);
-
-  const volume = meta.regularMarketVolume ?? null;
-
-  return {
-    ticker,
-    name: meta.longName || meta.shortName || ticker,
-    open: dayOpen, high: dayHigh, low: dayLow, close: last, prevClose, volume
-  };
-}
-
-function computeAnalysis(d){
-  const {open,high,low,close,prevClose} = d;
-  
-  // حساب مستويات نقطة الارتكاز Pivot Points مع الحماية من أخطاء الحساب
   const pivot = (high + low + close) / 3;
   const r1 = (2 * pivot) - low;
   const s1 = (2 * pivot) - high;
@@ -309,60 +365,60 @@ function computeAnalysis(d){
   const trendUp = close >= pivot;
 
   let rating = 3;
-  if(close > pivot) rating++;
-  if(close > r1) rating++;
-  if(close < pivot) rating--;
-  if(close < s1) rating--;
+  if (close > pivot) rating++;
+  if (close > r1) rating++;
+  if (close < pivot) rating--;
+  if (close < s1) rating--;
   rating = Math.max(1, Math.min(5, rating));
 
   let target = close >= pivot ? (close < r1 ? r1 : r2) : r1;
   let stop = close >= pivot ? s1 : s2;
   const expectedReturn = close > 0 ? ((target - close) / close * 100) : 0;
 
-  let confidence = Math.max(40, Math.min(90, Math.round(50 + Math.abs(pct)*3 + (trendUp ? 10 : -5))));
+  let confidence = Math.max(45, Math.min(92, Math.round(55 + Math.abs(pct) * 2.5 + (trendUp ? 10 : -5))));
 
   let recTitle, recNotes;
-  if(close >= r1*0.995){
-    recTitle = '⏳ اختبار المقاومة الأولى (R1)';
+  if (close >= r1 * 0.995) {
+    recTitle = '⏳ Testing Resistance 1 (R1)';
     recNotes = [
-      'السهم يختبر المقاومة عند ' + fmt(r1) + '. الاختراق يفتح المجال نحو ' + fmt(r2) + '.',
-      'يفضل انتظار تأكيد الإغلاق الفعلي فوق المقاومة.'
+      `Stock is testing key resistance around ${fmt(r1)} EGP. Sustaining above opens targets toward ${fmt(r2)}.`,
+      'Monitor trading volume to confirm breakout validity.'
     ];
-  } else if(close <= s1*1.005){
-    recTitle = '⚠️ ضغط قريب من مستوى الدعم (S1)';
+  } else if (close <= s1 * 1.005) {
+    recTitle = '⚠️ Trading Near Support 1 (S1)';
     recNotes = [
-      'السهم يقترب من مستوى الدعم عند ' + fmt(s1) + '.',
-      'كسر هذا المستوى يتطلب الالتزام بوقف الخسارة لتفادي الهبوط نحو ' + fmt(s2) + '.'
+      `Price is touching critical support at ${fmt(s1)} EGP.`,
+      `A clean breakdown requires strict adherence to stop loss around ${fmt(s2)}.`
     ];
   } else {
-    recTitle = trendUp ? '📈 زخم إيجابي أعلى نقطة الارتكاز' : '📉 ضغط سلبي أسفل نقطة الارتكاز';
+    recTitle = trendUp ? '📈 Bullish Momentum Above Pivot' : '📉 Bearish Pressure Below Pivot';
     recNotes = [
-      trendUp ? 'تداول السهم فوق نقطة الارتكاز (' + fmt(pivot) + ') يدعم استكمال الصعود.' : 'التداول أسفل نقطة الارتكاز (' + fmt(pivot) + ') يمثل ضغطًا هبوطيًا.',
-      'الهدف المحدد: ' + fmt(target) + ' | وقف الخسارة المقترح: ' + fmt(stop)
+      trendUp ? `Trading above Pivot (${fmt(pivot)}) favors further upside expansion.` : `Trading below Pivot (${fmt(pivot)}) maintains sell-side pressure.`,
+      `Target Objective: ${fmt(target)} | Suggested Stop Loss: ${fmt(stop)}`
     ];
   }
 
-  return {pivot,r1,s1,r2,s2,pct,trendUp,rating,target,stop,expectedReturn,confidence,recTitle,recNotes};
+  return { pivot, r1, s1, r2, s2, pct, trendUp, rating, target, stop, expectedReturn, confidence, recTitle, recNotes };
 }
 
-function render(d){
+function render(d) {
   $('report').classList.remove('hidden');
   const a = computeAnalysis(d);
 
   $('outTicker').textContent = d.ticker;
   $('outName').textContent = d.name;
-  $('outDate').textContent = new Date().toLocaleDateString('ar-EG', {year:'numeric', month:'long', day:'numeric'});
+  $('outDate').textContent = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
 
   $('outLast').textContent = fmt(d.close);
   const chgVal = d.close - d.prevClose;
   const chgEl = $('outChg');
-  chgEl.textContent = (chgVal>=0?'+':'') + fmt(chgVal) + ' (' + (a.pct>=0?'+':'') + a.pct.toFixed(2) + '%)';
-  chgEl.className = 'chg ' + (chgVal>=0?'up':'down');
+  chgEl.textContent = (chgVal >= 0 ? '+' : '') + fmt(chgVal) + ' (' + (a.pct >= 0 ? '+' : '') + a.pct.toFixed(2) + '%)';
+  chgEl.className = 'chg ' + (chgVal >= 0 ? 'up' : 'down');
 
   $('outHigh').textContent = fmt(d.high);
   $('outLow').textContent = fmt(d.low);
   $('outOpen').textContent = fmt(d.open);
-  $('outVol').textContent = d.volume ? Number(d.volume).toLocaleString('ar-EG') : '--';
+  $('outVol').textContent = d.volume ? Number(d.volume).toLocaleString('en-US') : '--';
 
   $('lvlR2').textContent = fmt(a.r2);
   $('lvlR1').textContent = fmt(a.r1);
@@ -370,146 +426,134 @@ function render(d){
   $('lvlS1').textContent = fmt(a.s1);
   $('lvlS2').textContent = fmt(a.s2);
 
-  $('trendBadge').textContent = a.trendUp ? '📈 اتجاه إيجابي (أعلى PP)' : '📉 اتجاه سلبي (أدنى PP)';
+  $('trendBadge').textContent = a.trendUp ? '📈 Bullish Trend (Above PP)' : '📉 Bearish Trend (Below PP)';
   $('trendBadge').style.color = a.trendUp ? 'var(--green)' : 'var(--red)';
 
   const starsEl = $('ratingStars');
   starsEl.innerHTML = '';
-  for(let i=0;i<5;i++){
+  for (let i = 0; i < 5; i++) {
     const s = document.createElement('span');
     s.textContent = '★';
-    if(i>=a.rating) s.className='off';
+    if (i >= a.rating) s.className = 'off';
     starsEl.appendChild(s);
   }
 
   const notesEl = $('techNotes');
   notesEl.innerHTML = '';
   const notes = [
-    'نقطة الارتكاز المحورية للجلسة عند ' + fmt(a.pivot) + ' جنيه.',
-    a.trendUp ? 'السهم يتداول أعلى Pivot مما يعزز الصعود نحو ' + fmt(a.r1) : 'السهم يتداول أسفل Pivot مما يرجح اختبار الدعم ' + fmt(a.s1),
-    'النطاق المتوقع للحركة: بين ' + fmt(a.s2) + ' و ' + fmt(a.r2) + '.'
+    `Daily Pivot Point established at ${fmt(a.pivot)} EGP.`,
+    a.trendUp ? `Trading above Pivot confirms technical strength toward ${fmt(a.r1)}.` : `Trading below Pivot signals potential weakness targeting ${fmt(a.s1)}.`,
+    `Expected intraday trading range: ${fmt(a.s2)} – ${fmt(a.r2)}.`
   ];
-  notes.forEach(n=>{ const li=document.createElement('li'); li.textContent=n; notesEl.appendChild(li); });
+  notes.forEach(n => { const li = document.createElement('li'); li.textContent = n; notesEl.appendChild(li); });
 
   $('outStop').textContent = fmt(a.stop);
   $('outTarget').textContent = fmt(a.target);
-  $('outReturn').textContent = (a.expectedReturn>=0?'+':'') + a.expectedReturn.toFixed(2) + '%';
+  $('outReturn').textContent = (a.expectedReturn >= 0 ? '+' : '') + a.expectedReturn.toFixed(2) + '%';
   $('outConf').textContent = a.confidence + '%';
   $('outRecTitle').textContent = a.recTitle;
-  
+
   const recNotesEl = $('recNotes');
   recNotesEl.innerHTML = '';
-  a.recNotes.forEach(n=>{ const li=document.createElement('li'); li.textContent=n; recNotesEl.appendChild(li); });
+  a.recNotes.forEach(n => { const li = document.createElement('li'); li.textContent = n; recNotesEl.appendChild(li); });
 
   drawShareCanvas(d, a);
 }
 
-function drawShareCanvas(d, a){
+function drawShareCanvas(d, a) {
   const cv = $('shareCanvas');
   const ctx = cv.getContext('2d');
-  const W=cv.width, H=cv.height;
-  ctx.direction='rtl';
+  const W = cv.width, H = cv.height;
+  ctx.direction = 'ltr';
 
-  const grad = ctx.createLinearGradient(0,0,0,H);
-  grad.addColorStop(0,'#0d1512'); grad.addColorStop(1,'#080b09');
-  ctx.fillStyle = grad; ctx.fillRect(0,0,W,H);
+  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+  const bgColor = isDark ? '#151922' : '#0f172a';
+  const panelColor = isDark ? '#1c2230' : '#1e293b';
+  const textColor = '#f0f3f8';
+  const mutedColor = '#848e9c';
+  const greenColor = '#26a69a';
+  const redColor = '#ef5350';
 
-  const green='#3ddc73', red='#ef4a4a', muted='#8ea99a', text='#eaf2ec', panel='#141f19', line='#233126';
-  const rightX = W-60;
+  ctx.fillStyle = bgColor; ctx.fillRect(0, 0, W, H);
 
-  ctx.textAlign='right';
-  ctx.fillStyle=muted; ctx.font='28px Tajawal, sans-serif';
-  ctx.fillText('تحليل فني للسهم', rightX, 80);
-  ctx.fillStyle=green; ctx.font='800 64px Tajawal, sans-serif';
-  ctx.fillText(d.ticker, rightX, 150);
-  ctx.fillStyle=text; ctx.font='26px Tajawal, sans-serif';
-  ctx.fillText(d.name || '', rightX, 190);
+  const leftX = 60;
+  ctx.textAlign = 'left';
+  ctx.fillStyle = mutedColor; ctx.font = '28px Inter, sans-serif';
+  ctx.fillText('Live Technical Report Card', leftX, 80);
+  ctx.fillStyle = greenColor; ctx.font = '800 60px Inter, sans-serif';
+  ctx.fillText(d.ticker, leftX, 150);
+  ctx.fillStyle = textColor; ctx.font = '26px Inter, sans-serif';
+  ctx.fillText(d.name || '', leftX, 190);
 
-  ctx.textAlign='left';
-  ctx.fillStyle=muted; ctx.font='22px Tajawal, sans-serif';
-  ctx.fillText(new Date().toLocaleDateString('ar-EG',{year:'numeric',month:'long',day:'numeric'}), 60, 80);
+  ctx.textAlign = 'right';
+  ctx.fillStyle = mutedColor; ctx.font = '22px Inter, sans-serif';
+  ctx.fillText(new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }), W - 60, 80);
 
-  const chgVal = d.close-d.prevClose;
-  ctx.textAlign='right';
-  ctx.fillStyle=text; ctx.font='800 60px Tajawal, sans-serif';
-  ctx.fillText(fmt(d.close), rightX, 270);
-  ctx.fillStyle = chgVal>=0?green:red; ctx.font='700 30px Tajawal, sans-serif';
-  ctx.fillText((chgVal>=0?'+':'')+fmt(chgVal)+'  ('+(a.pct>=0?'+':'')+a.pct.toFixed(2)+'%)', rightX, 315);
+  const chgVal = d.close - d.prevClose;
+  ctx.textAlign = 'left';
+  ctx.fillStyle = textColor; ctx.font = '800 58px Inter, sans-serif';
+  ctx.fillText(fmt(d.close), leftX, 260);
+  ctx.fillStyle = chgVal >= 0 ? greenColor : redColor; ctx.font = '700 28px Inter, sans-serif';
+  ctx.fillText((chgVal >= 0 ? '+' : '') + fmt(chgVal) + ' (' + (a.pct >= 0 ? '+' : '') + a.pct.toFixed(2) + '%)', leftX, 305);
 
-  function statBox(x,y,w,h,label,val){
-    ctx.fillStyle=panel; roundRect(ctx,x,y,w,h,12); ctx.fill();
-    ctx.strokeStyle=line; ctx.lineWidth=1; roundRect(ctx,x,y,w,h,12); ctx.stroke();
-    ctx.textAlign='center';
-    ctx.fillStyle=muted; ctx.font='20px Tajawal, sans-serif';
-    ctx.fillText(label, x+w/2, y+34);
-    ctx.fillStyle=text; ctx.font='800 26px Tajawal, sans-serif';
-    ctx.fillText(val, x+w/2, y+70);
+  function statBox(x, y, w, h, label, val) {
+    ctx.fillStyle = panelColor; roundRect(ctx, x, y, w, h, 12); ctx.fill();
+    ctx.textAlign = 'center';
+    ctx.fillStyle = mutedColor; ctx.font = '20px Inter, sans-serif';
+    ctx.fillText(label, x + w / 2, y + 34);
+    ctx.fillStyle = textColor; ctx.font = '800 26px Inter, sans-serif';
+    ctx.fillText(val, x + w / 2, y + 70);
   }
 
-  const gy=360, gw=(W-120-30)/4, gh=90;
-  statBox(60,gy,gw,gh,'أعلى سعر',fmt(d.high));
-  statBox(60+gw+10,gy,gw,gh,'أدنى سعر',fmt(d.low));
-  statBox(60+2*(gw+10),gy,gw,gh,'الافتتاح',fmt(d.open));
-  statBox(60+3*(gw+10),gy,gw,gh,'الإغلاق',fmt(d.close));
+  const gy = 350, gw = (W - 120 - 30) / 4, gh = 90;
+  statBox(60, gy, gw, gh, 'High', fmt(d.high));
+  statBox(60 + gw + 10, gy, gw, gh, 'Low', fmt(d.low));
+  statBox(60 + 2 * (gw + 10), gy, gw, gh, 'Open', fmt(d.open));
+  statBox(60 + 3 * (gw + 10), gy, gw, gh, 'Close', fmt(d.close));
 
-  let ly=520;
-  ctx.textAlign='right'; ctx.fillStyle=muted; ctx.font='700 26px Tajawal, sans-serif';
-  ctx.fillText('المستويات الفنية (Pivot Points)', rightX, ly);
-  ly+=45;
-  const levels = [['مقاومة 2 (R2)',a.r2,red],['مقاومة 1 (R1)',a.r1,red],['نقطة الارتكاز (PP)',a.pivot,muted],['دعم 1 (S1)',a.s1,green],['دعم 2 (S2)',a.s2,green]];
-  levels.forEach(([lbl,val,col])=>{
-    ctx.fillStyle=panel; roundRect(ctx,60,ly-32,W-120,52,10); ctx.fill();
-    ctx.textAlign='right'; ctx.fillStyle=text; ctx.font='24px Tajawal, sans-serif';
-    ctx.fillText(lbl, rightX-20, ly);
-    ctx.textAlign='left'; ctx.fillStyle=col; ctx.font='800 26px Tajawal, sans-serif';
-    ctx.fillText(fmt(val), 80, ly);
-    ly+=62;
+  let ly = 500;
+  ctx.textAlign = 'left'; ctx.fillStyle = mutedColor; ctx.font = '700 26px Inter, sans-serif';
+  ctx.fillText('Pivot Levels', leftX, ly);
+  ly += 40;
+  const levels = [['Resistance 2 (R2)', a.r2, redColor], ['Resistance 1 (R1)', a.r1, redColor], ['Pivot Point (PP)', a.pivot, mutedColor], ['Support 1 (S1)', a.s1, greenColor], ['Support 2 (S2)', a.s2, greenColor]];
+  levels.forEach(([lbl, val, col]) => {
+    ctx.fillStyle = panelColor; roundRect(ctx, 60, ly - 32, W - 120, 50, 10); ctx.fill();
+    ctx.textAlign = 'left'; ctx.fillStyle = textColor; ctx.font = '24px Inter, sans-serif';
+    ctx.fillText(lbl, leftX + 20, ly);
+    ctx.textAlign = 'right'; ctx.fillStyle = col; ctx.font = '800 26px Inter, sans-serif';
+    ctx.fillText(fmt(val), W - 80, ly);
+    ly += 60;
   });
 
-  ly+=30;
-  ctx.fillStyle=panel; roundRect(ctx,60,ly,W-120,220,14); ctx.fill();
-  ctx.strokeStyle=line; roundRect(ctx,60,ly,W-120,220,14); ctx.stroke();
-  ctx.textAlign='right'; ctx.fillStyle=green; ctx.font='800 26px Tajawal, sans-serif';
-  wrapText(ctx, a.recTitle, rightX-20, ly+45, W-160, 34);
+  ly += 20;
+  ctx.fillStyle = panelColor; roundRect(ctx, 60, ly, W - 120, 200, 14); ctx.fill();
+  ctx.textAlign = 'left'; ctx.fillStyle = greenColor; ctx.font = '800 26px Inter, sans-serif';
+  ctx.fillText(a.recTitle, leftX + 20, ly + 45);
 
-  const rgy = ly+85;
-  const rgw = (W-120-30)/3;
-  statBox(60,rgy,rgw,90,'وقف الخسارة',fmt(a.stop));
-  statBox(60+rgw+15,rgy,rgw,90,'الهدف',fmt(a.target));
-  statBox(60+2*(rgw+15),rgy,rgw,90,'نسبة الثقة',a.confidence+'%');
+  const rgy = ly + 80;
+  const rgw = (W - 120 - 30) / 3;
+  statBox(60, rgy, rgw, 90, 'Stop Loss', fmt(a.stop));
+  statBox(60 + rgw + 15, rgy, rgw, 90, 'Target', fmt(a.target));
+  statBox(60 + 2 * (rgw + 15), rgy, rgw, 90, 'Confidence', a.confidence + '%');
 
-  ctx.textAlign='center'; ctx.fillStyle=muted; ctx.font='18px Tajawal, sans-serif';
-  wrapText(ctx, 'استراتيجية التداول: Pivot Point Momentum Breakthrough.', W/2, H-40, W-160, 26);
+  ctx.textAlign = 'center'; ctx.fillStyle = mutedColor; ctx.font = '18px Inter, sans-serif';
+  ctx.fillText('Data Source: TradingView Scanner Engine', W / 2, H - 40);
 }
 
-function roundRect(ctx,x,y,w,h,r){
+function roundRect(ctx, x, y, w, h, r) {
   ctx.beginPath();
-  ctx.moveTo(x+r,y);
-  ctx.arcTo(x+w,y,x+w,y+h,r);
-  ctx.arcTo(x+w,y+h,x,y+h,r);
-  ctx.arcTo(x,y+h,x,y,r);
-  ctx.arcTo(x,y,x+w,y,r);
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + w, y, x + w, y + h, r);
+  ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r);
+  ctx.arcTo(x, y, x + w, y, r);
   ctx.closePath();
 }
 
-function wrapText(ctx, text, x, y, maxWidth, lineHeight){
-  const words = text.split(' ');
-  let line='';
-  words.forEach(w=>{
-    const test = line + w + ' ';
-    if(ctx.measureText(test).width > maxWidth && line){
-      ctx.fillText(line.trim(), x, y);
-      line = w+' ';
-      y += lineHeight;
-    } else line = test;
-  });
-  ctx.fillText(line.trim(), x, y);
-}
-
-$('downloadBtn').addEventListener('click', ()=>{
+$('downloadBtn').addEventListener('click', () => {
   const cv = $('shareCanvas');
   const link = document.createElement('a');
-  link.download = (currentData?.ticker || 'stock') + '-analysis.png';
+  link.download = (currentData?.ticker || 'stock') + '-tradingview-report.png';
   link.href = cv.toDataURL('image/png');
   link.click();
 });
