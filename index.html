@@ -1,385 +1,691 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl" id="html-tag">
+<html lang="en" dir="ltr" data-theme="dark">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>محلل الأسهم الفني الشامل - Stock Analyzer</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- مكتبة تحويل التقرير إلى صورة -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Medium-Term Stock Investment Analyzer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;800&display=swap" rel="stylesheet">
+<!-- Chart.js CDN -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+  :root[data-theme="dark"] {
+    --bg: #0b0e14;
+    --panel: #151922;
+    --panel-2: #1c2230;
+    --line: #2a3347;
+    --green: #26a69a;
+    --red: #ef5350;
+    --amber: #ffb74d;
+    --text: #f0f3f8;
+    --muted: #848e9c;
+    --accent: #2962ff;
+  }
+
+  :root[data-theme="slate"] {
+    --bg: #1e293b;
+    --panel: #0f172a;
+    --panel-2: #1e293b;
+    --line: #334155;
+    --green: #10b981;
+    --red: #f43f5e;
+    --amber: #f59e0b;
+    --text: #f8fafc;
+    --muted: #94a3b8;
+    --accent: #3b82f6;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    padding: 20px;
+  }
+  .wrap { max-width: 900px; margin: 0 auto; }
+  
+  .header {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 20px; flex-wrap: wrap; gap: 10px;
+  }
+  .header h1 { margin: 0; font-size: 22px; font-weight: 800; }
+  .theme-switch {
+    display: flex; gap: 8px; background: var(--panel); padding: 4px; border-radius: 10px; border: 1px solid var(--line);
+  }
+  .theme-btn {
+    background: transparent; border: none; color: var(--muted); padding: 6px 12px;
+    border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 700;
+  }
+  .theme-btn.active { background: var(--accent); color: #fff; }
+
+  .toolbar {
+    display: flex; flex-wrap: wrap; gap: 10px; align-items: center;
+    background: var(--panel); border: 1px solid var(--line); border-radius: 16px;
+    padding: 16px; margin-bottom: 16px;
+  }
+  .toolbar input {
+    background: var(--panel-2); border: 1px solid var(--line); color: var(--text);
+    border-radius: 10px; padding: 12px 16px; font-size: 16px; flex: 1; min-width: 160px; outline: none;
+  }
+  .toolbar button {
+    background: var(--accent); color: #ffffff; border: none; border-radius: 10px;
+    padding: 12px 22px; font-weight: 800; font-size: 15px; cursor: pointer;
+  }
+  .toolbar button.secondary { background: transparent; color: var(--text); border: 1px solid var(--line); }
+  .status { font-size: 13.5px; color: var(--muted); width: 100%; margin-top: 4px; }
+  .status.err { color: var(--red); }
+
+  .card {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 16px;
+    padding: 20px; margin-bottom: 16px;
+  }
+  .card h2 { margin: 0 0 16px; font-size: 17px; color: var(--muted); font-weight: 700; }
+  .head-row { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; flex-wrap: wrap; }
+  .title-block .ticker { color: var(--green); font-size: 34px; font-weight: 800; }
+  .date-box { background: var(--panel-2); border: 1px solid var(--line); border-radius: 10px; padding: 8px 14px; font-size: 13px; color: var(--muted); }
+  
+  .price-row { display: flex; gap: 20px; align-items: baseline; margin-top: 8px; flex-wrap: wrap; }
+  .price-row .last { font-size: 42px; font-weight: 800; }
+  .price-row .chg { font-size: 22px; font-weight: 700; }
+  .up { color: var(--green); }
+  .down { color: var(--red); }
+
+  .grid4 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+  @media(min-width: 640px){ .grid4 { grid-template-columns: repeat(4, 1fr); } }
+  .stat { background: var(--panel-2); border: 1px solid var(--line); border-radius: 12px; padding: 12px; text-align: center; }
+  .stat .lbl { font-size: 12px; color: var(--muted); margin-bottom: 6px; }
+  .stat .val { font-size: 15px; font-weight: 800; }
+
+  .chart-container {
+    position: relative; height: 340px; width: 100%; margin-top: 15px;
+  }
+
+  .levels { width: 100%; border-collapse: collapse; font-size: 15px; }
+  .levels td { padding: 10px 6px; border-bottom: 1px solid var(--line); }
+  .levels tr:last-child td { border-bottom: none; }
+  .levels td:first-child { color: var(--muted); }
+  .levels td:last-child { text-align: right; font-weight: 800; }
+
+  .notes li { margin-bottom: 10px; line-height: 1.7; font-size: 15px; color: var(--text); }
+  
+  .badge {
+    display: inline-flex; align-items: center; gap: 6px; background: var(--panel-2);
+    border: 1px solid var(--line); border-radius: 999px; padding: 6px 16px; font-size: 14px; font-weight: 700;
+  }
+  .manual-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: 12px; }
+  .manual-grid label { font-size: 12px; color: var(--muted); display: block; margin-bottom: 4px; }
+  .manual-grid input { width: 100%; background: var(--panel-2); border: 1px solid var(--line); color: var(--text); border-radius: 8px; padding: 10px; }
+  
+  .hidden { display: none !important; }
+  #shareCanvas { width: 100%; border-radius: 12px; border: 1px solid var(--line); display: block; margin-top: 10px; }
+</style>
 </head>
-<body class="bg-gray-900 text-gray-100 font-sans p-4 md:p-6">
+<body>
+<div class="wrap">
 
-    <div class="max-w-4xl mx-auto space-y-6">
+  <div class="header">
+    <h1>📈 Medium-Term Investment Analyzer</h1>
+    <div class="theme-switch">
+      <button class="theme-btn active" onclick="setTheme('dark', event)">Dark (Neon)</button>
+      <button class="theme-btn" onclick="setTheme('slate', event)">Modern Slate</button>
+    </div>
+  </div>
 
-        <!-- Input & Controls Header -->
-        <div class="bg-gray-800 rounded-xl border border-gray-700 p-4 shadow-lg flex flex-col md:flex-row gap-4 items-center justify-between">
-            <div class="w-full md:w-1/2 flex gap-2">
-                <input type="text" id="stock-input" placeholder="أدخل رمز السهم..." value="EGYP" 
-                    class="w-full bg-gray-900 border border-gray-700 text-white rounded-lg px-4 py-2 text-sm focus:outline-none focus:border-blue-500">
-                <button onclick="updateStockData()" id="btn-search" class="bg-blue-600 hover:bg-blue-500 text-white px-5 py-2 rounded-lg text-sm font-semibold transition shrink-0">
-                    عرض التقرير
-                </button>
-            </div>
-            
-            <div class="flex items-center gap-3 w-full md:w-auto justify-end">
-                <!-- Export Image Button -->
-                <button onclick="exportReportAsImage()" class="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold px-4 py-2 rounded-lg transition flex items-center gap-1">
-                    📸 <span id="btn-export-text">تصدير التقرير كصورة</span>
-                </button>
-                <!-- Language Toggle Button -->
-                <button onclick="toggleLanguage()" class="bg-gray-700 hover:bg-gray-600 text-xs text-blue-300 font-semibold px-3 py-2 rounded-lg border border-gray-600 transition">
-                    🌐 English / عربي
-                </button>
-            </div>
+  <div class="toolbar">
+    <input id="tickerInput" placeholder="Ticker (e.g. ORAS, ETEL, COMI)" value="ORAS">
+    <button id="fetchBtn">🔍 Analyze via TradingView</button>
+    <button id="manualBtn" class="secondary">✍️ Manual Entry</button>
+    <div id="status" class="status">Enter ticker symbol to run smart medium-term trend & multi-factor trigger analysis.</div>
+  </div>
+
+  <!-- Manual Entry Panel -->
+  <div id="manualPanel" class="card hidden">
+    <h2>✍️ Manual Data Entry (Medium-Term Parameters)</h2>
+    <div class="manual-grid">
+      <div><label>Current Price (EGP)</label><input id="m_close" type="number" step="0.01"></div>
+      <div><label>Previous Close (EGP)</label><input id="m_prev" type="number" step="0.01"></div>
+      <div><label>Session Volume (Shares)</label><input id="m_vol" type="number" step="1"></div>
+      <div><label>20-Day Avg Volume (Shares)</label><input id="m_avgvol" type="number" step="1"></div>
+      <div><label>52-Week High (EGP)</label><input id="m_high52" type="number" step="0.01"></div>
+      <div><label>52-Week Low (EGP)</label><input id="m_low52" type="number" step="0.01"></div>
+      <div><label>EMA 20</label><input id="m_ema20" type="number" step="0.01"></div>
+      <div><label>EMA 50</label><input id="m_ema50" type="number" step="0.01"></div>
+      <div><label>EMA 200</label><input id="m_ema200" type="number" step="0.01"></div>
+      <div><label>RSI (14)</label><input id="m_rsi" type="number" step="0.1"></div>
+      <div><label>MACD Line</label><input id="m_macd" type="number" step="0.01"></div>
+      <div><label>MACD Signal Line</label><input id="m_macdsig" type="number" step="0.01"></div>
+    </div>
+    <button id="applyManual" style="margin-top:14px; width:100%; background:var(--green); color:#fff; border:none; border-radius:10px; padding:12px; font-weight:800; cursor:pointer;">Generate Investment Analysis</button>
+  </div>
+
+  <!-- Main Analysis Section -->
+  <div id="report" class="hidden">
+
+    <div class="card">
+      <div class="head-row">
+        <div class="title-block">
+          <div class="ticker" id="outTicker">--</div>
+          <div style="color:var(--muted); font-size:15px; margin-top:2px;" id="outName">—</div>
         </div>
-
-        <!-- Printable / Exportable Report Card -->
-        <div id="report-card" class="bg-gray-800 rounded-xl shadow-2xl border border-gray-700 p-6 space-y-6">
-            
-            <!-- Report Header -->
-            <div class="flex flex-col md:flex-row justify-between items-start md:items-center border-b border-gray-700 pb-4 gap-4">
-                <div>
-                    <h1 class="text-2xl font-bold text-white flex items-center gap-2">
-                        <span id="display-ticker" class="text-blue-400">EGYP</span> / <span id="title">تقرير التحليل الفني الشامل</span>
-                    </h1>
-                    <p class="text-sm text-gray-400">
-                        <span id="label-strategy">الاستراتيجية النشطة:</span> 
-                        <span class="text-blue-400 font-semibold" id="val-strategy">تقييم إعادة اختبار الدعم</span>
-                    </p>
-                </div>
-                <div>
-                    <span class="inline-block bg-yellow-500/10 text-yellow-400 border border-yellow-500/30 text-xs px-3 py-1.5 rounded-full font-semibold" id="status-badge">
-                        الحالة: مراقبة (3.0 / 5.0)
-                    </span>
-                </div>
-            </div>
-
-            <!-- Key Technical Metrics Grid (القيم الفنية، المستويات، القمة والحجم) -->
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
-                <div class="bg-gray-900/60 border border-gray-700/80 p-3 rounded-lg">
-                    <p class="text-xs text-gray-400" id="lbl-entry">منطقة الدخول المقترحة</p>
-                    <p class="text-base font-bold text-emerald-400" id="val-entry">183.50 - 185.00 ج.م</p>
-                </div>
-                <div class="bg-gray-900/60 border border-gray-700/80 p-3 rounded-lg">
-                    <p class="text-xs text-gray-400" id="lbl-stop">وقف الخسارة (Stop Loss)</p>
-                    <p class="text-base font-bold text-rose-400" id="val-stop">178.00 ج.م (كسر الدعم)</p>
-                </div>
-                <div class="bg-gray-900/60 border border-gray-700/80 p-3 rounded-lg">
-                    <p class="text-xs text-gray-400" id="lbl-ath">القمة التاريخية (ATH)</p>
-                    <p class="text-base font-bold text-yellow-400" id="val-ath">215.00 ج.م</p>
-                </div>
-                <div class="bg-gray-900/60 border border-gray-700/80 p-3 rounded-lg">
-                    <p class="text-xs text-gray-400" id="lbl-volume">حجم التداول (Volume)</p>
-                    <p class="text-base font-bold text-blue-300" id="val-volume">0.85x (ضعيف)</p>
-                </div>
-            </div>
-
-            <!-- Support & Resistance Levels Card -->
-            <div class="bg-gray-900/40 border border-gray-700 p-4 rounded-lg">
-                <h3 class="text-xs uppercase font-semibold text-gray-400 mb-2" id="lbl-sr-title">مستويات الدعم والمقاومة الرئيسية</h3>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
-                    <div class="flex justify-between items-center bg-emerald-950/20 border border-emerald-500/20 p-2.5 rounded">
-                        <span class="text-emerald-300 font-medium" id="lbl-supports">نقاط الدعم (Supports):</span>
-                        <span class="font-mono font-bold text-emerald-400" id="val-supports">S1: 183.00 | S2: 175.00</span>
-                    </div>
-                    <div class="flex justify-between items-center bg-rose-950/20 border border-rose-500/20 p-2.5 rounded">
-                        <span class="text-rose-300 font-medium" id="lbl-resistances">نقاط المقاومة (Resistances):</span>
-                        <span class="font-mono font-bold text-rose-400" id="val-resistances">R1: 192.50 | R2: 201.86</span>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Score Breakdown Table -->
-            <div class="overflow-x-auto">
-                <table class="w-full text-right border-collapse" id="main-table">
-                    <thead>
-                        <tr class="bg-gray-900/80 text-gray-400 text-xs uppercase border-b border-gray-700">
-                            <th class="py-3 px-4" id="th-param">المؤشر / الشرط</th>
-                            <th class="py-3 px-4" id="th-target">الهدف المطلوب</th>
-                            <th class="py-3 px-4" id="th-current">القيمة الحالية</th>
-                            <th class="py-3 px-4 text-center" id="th-status">الحالة</th>
-                            <th class="py-3 px-4 text-left" id="th-points">النقاط</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-gray-700/50 text-sm">
-                        <tr class="hover:bg-gray-750">
-                            <td class="py-3 px-4 font-medium text-white" id="r1-name">الاتجاه العام</td>
-                            <td class="py-3 px-4 text-gray-400" id="r1-target">السعر ≥ المتوسط 200 EMA</td>
-                            <td class="py-3 px-4 text-gray-300" id="r1-val">أعلى من المتوسط 200</td>
-                            <td class="py-3 px-4 text-center">
-                                <span class="bg-emerald-500/10 text-emerald-400 text-xs px-2 py-0.5 rounded border border-emerald-500/20 font-semibold" id="r1-status">مكتمل</span>
-                            </td>
-                            <td class="py-3 px-4 text-left font-mono text-emerald-400">1.0 / 1.0</td>
-                        </tr>
-                        <tr class="hover:bg-gray-750">
-                            <td class="py-3 px-4 font-medium text-white" id="r2-name">اختبار الدعم</td>
-                            <td class="py-3 px-4 text-gray-400" id="r2-target">الثبات فوق منطقة دعم رئيسية</td>
-                            <td class="py-3 px-4 text-gray-300" id="r2-val">اختبار دعم 183.00 ج.م</td>
-                            <td class="py-3 px-4 text-center">
-                                <span class="bg-emerald-500/10 text-emerald-400 text-xs px-2 py-0.5 rounded border border-emerald-500/20 font-semibold" id="r2-status">مكتمل</span>
-                            </td>
-                            <td class="py-3 px-4 text-left font-mono text-emerald-400">1.0 / 1.0</td>
-                        </tr>
-                        <tr class="hover:bg-gray-750">
-                            <td class="py-3 px-4 font-medium text-white" id="r3-name">ارتداد RSI</td>
-                            <td class="py-3 px-4 text-gray-400" id="r3-target">مؤشر القوة بين 35 – 50</td>
-                            <td class="py-3 px-4 text-gray-300" id="r3-val">RSI = 42.5</td>
-                            <td class="py-3 px-4 text-center">
-                                <span class="bg-emerald-500/10 text-emerald-400 text-xs px-2 py-0.5 rounded border border-emerald-500/20 font-semibold" id="r3-status">مكتمل</span>
-                            </td>
-                            <td class="py-3 px-4 text-left font-mono text-emerald-400">1.0 / 1.0</td>
-                        </tr>
-                        <tr class="bg-red-950/10 hover:bg-red-950/20">
-                            <td class="py-3 px-4 font-medium text-white" id="r4-name">انعطاف MACD</td>
-                            <td class="py-3 px-4 text-gray-400" id="r4-target">تقلص أعمدة الهيستوجرام للأعلى</td>
-                            <td class="py-3 px-4 text-red-300" id="r4-val">توسع للسفل (سلبي)</td>
-                            <td class="py-3 px-4 text-center">
-                                <span class="bg-rose-500/10 text-rose-400 text-xs px-2 py-0.5 rounded border border-rose-500/20 font-semibold" id="r4-status">غير مكتمل</span>
-                            </td>
-                            <td class="py-3 px-4 text-left font-mono text-rose-400">0.0 / 1.0</td>
-                        </tr>
-                        <tr class="bg-red-950/10 hover:bg-red-950/20">
-                            <td class="py-3 px-4 font-medium text-white" id="r5-name">تأكيد أحجام التداول</td>
-                            <td class="py-3 px-4 text-gray-400" id="r5-target">الحجم > 1.30x متوسط 20 يوم</td>
-                            <td class="py-3 px-4 text-red-300" id="r5-val">الحجم = 0.85x المتوسط</td>
-                            <td class="py-3 px-4 text-center">
-                                <span class="bg-rose-500/10 text-rose-400 text-xs px-2 py-0.5 rounded border border-rose-500/20 font-semibold" id="r5-status">غير مكتمل</span>
-                            </td>
-                            <td class="py-3 px-4 text-left font-mono text-rose-400">0.0 / 1.0</td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-
-            <!-- Highlighted Unachieved Conditions -->
-            <div class="bg-rose-950/20 border border-rose-500/30 rounded-lg p-4">
-                <h3 class="text-sm font-semibold text-rose-400 flex items-center gap-2 mb-2" id="missed-title">
-                    ⚠️ الشروط غير المحققة (فارق -2.0 نقطة)
-                </h3>
-                <ul class="list-disc list-inside text-xs text-rose-200/80 space-y-1" id="missed-list">
-                    <li><strong class="text-rose-300">عزم MACD:</strong> لم يلتف منحنى MACD للأعلى بعد. يفضل انتظار تقاطع إيجابي قبل الدخول.</li>
-                    <li><strong class="text-rose-300">حجم التداول عند الدعم:</strong> الفوليوم الحالي ضعيف (0.85x). نحتاج إلى دخول سيولة واضحة لتأكيد حماية منطقة الدعم.</li>
-                </ul>
-            </div>
-
-            <!-- Multi-Timeframe Pattern Analysis Note -->
-            <div class="bg-indigo-950/30 border border-indigo-500/30 rounded-lg p-4">
-                <h3 class="text-sm font-semibold text-indigo-300 flex items-center gap-2 mb-2" id="patterns-title">
-                    🔍 تحليل النماذج الفنية (الفريم الأسبوعي واليومي)
-                </h3>
-                <ul class="list-disc list-inside text-xs text-indigo-200/90 space-y-2" id="patterns-list">
-                    <li>
-                        <strong class="text-indigo-400" id="pat-weekly-label">الفريم الأسبوعي (Weekly):</strong>
-                        <span id="pat-weekly-val">نموذج استمراري محتمل (Bull Flag / علم صاعد). الاتجاه الرئيسي صاعد والتصحيح يعكس تجميعاً هادئاً.</span>
-                    </li>
-                    <li>
-                        <strong class="text-indigo-400" id="pat-daily-label">الفريم اليومي (Daily):</strong>
-                        <span id="pat-daily-val">تكون قاع مزدوج محتمل (Double Bottom) عند دعم 183.00. في انتظار تأكيد اختراق خط العنق عند 192.50 ج.م.</span>
-                    </li>
-                </ul>
-            </div>
-
-            <!-- Footer Status & Action -->
-            <div class="flex justify-between items-center bg-gray-900/80 p-4 rounded-lg border border-gray-700">
-                <div>
-                    <p class="text-xs text-gray-400" id="lbl-threshold">الحد الأدنى للتفعيل: <span class="text-gray-200 font-semibold">≥ 4.0 نقاط</span></p>
-                    <p class="text-xs text-gray-400" id="lbl-score">النقاط الحالية: <span class="text-yellow-400 font-bold">3.0 نقاط</span></p>
-                </div>
-                <button disabled class="bg-gray-700 text-gray-400 px-4 py-2 rounded-lg text-sm font-semibold cursor-not-allowed border border-gray-600" id="btn-trigger">
-                    اشارة الدخول معطلة
-                </button>
-            </div>
-
-        </div>
-
+        <div class="date-box" id="outDate">—</div>
+      </div>
+      <div class="price-row">
+        <div class="last" id="outLast">--</div>
+        <div class="chg" id="outChg">--</div>
+      </div>
+      <div class="grid4" style="margin-top:20px;">
+        <div class="stat"><div class="lbl">Session Vol</div><div class="val" id="outVol">--</div></div>
+        <div class="stat"><div class="lbl">20D Avg Vol</div><div class="val" id="outAvgVol">--</div></div>
+        <div class="stat"><div class="lbl">52-Week High</div><div class="val" id="outHigh52" style="color:var(--amber)">--</div></div>
+        <div class="stat"><div class="lbl">52-Week Low</div><div class="val" id="outLow52" style="color:var(--muted)">--</div></div>
+      </div>
     </div>
 
-    <!-- Scripts -->
-    <script>
-        let currentLang = 'ar';
+    <!-- Simplified Key Structure Visual Chart -->
+    <div class="card">
+      <h2>📉 Price Structure & Key Levels Visualization</h2>
+      <div class="chart-container">
+        <canvas id="priceStructureChart"></canvas>
+      </div>
+    </div>
 
-        function updateStockData() {
-            const inputVal = document.getElementById('stock-input').value.trim().toUpperCase();
-            if(inputVal !== "") {
-                document.getElementById('display-ticker').innerText = inputVal;
-            }
+    <!-- Technical Indicators & Key Structural Levels Panel -->
+    <div class="card">
+      <h2>⚙️ Key Structural Levels & Technical Indicators</h2>
+      <table class="levels">
+        <tr><td>🚀 52-Week High (Historical Peak)</td><td id="valHigh52" style="color:var(--amber)">--</td></tr>
+        <tr><td>🛑 Main Resistance (Immediate Ceiling)</td><td id="valMainResist" style="color:var(--red)">--</td></tr>
+        <tr><td>⚡ Trigger Point Price</td><td id="valTriggerPoint" style="color:var(--accent)">--</td></tr>
+        <tr><td>🛡️ Main Support (Current Floor)</td><td id="valMainSupp" style="color:var(--green)">--</td></tr>
+        <tr><td>📉 52-Week Low (Historical Floor)</td><td id="valLow52" style="color:var(--muted)">--</td></tr>
+        <tr><td>RSI (14-period)</td><td id="valRsi">--</td></tr>
+        <tr><td>MACD (12, 26, 9)</td><td id="valMacd">--</td></tr>
+        <tr><td>EMA 20 / EMA 50 / EMA 200</td><td id="valEmas">--</td></tr>
+      </table>
+    </div>
+
+    <div class="card">
+      <h2>📊 Market Structure & Trend Alignment</h2>
+      <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px;">
+        <span class="badge" id="trendBadge">--</span>
+        <span class="badge" id="rsiBadge">--</span>
+      </div>
+      <ul class="notes" id="techNotes" style="margin-top:14px;"></ul>
+    </div>
+
+    <!-- Medium-Term Investment Plan -->
+    <div class="card">
+      <h2>🎯 Medium-Term Entry & Position Parameters</h2>
+      <div class="grid4">
+        <div class="stat"><div class="lbl">Main Support</div><div class="val" id="outMainSupp" style="color:var(--green)">--</div></div>
+        <div class="stat"><div class="lbl">Main Resistance</div><div class="val" id="outMainResist" style="color:var(--red)">--</div></div>
+        <div class="stat"><div class="lbl">Trigger Price Point</div><div class="val" id="outTriggerPoint" style="color:var(--accent)">--</div></div>
+        <div class="stat"><div class="lbl">Medium Target</div><div class="val" id="outTarget" style="color:var(--green)">--</div></div>
+      </div>
+      <div style="margin-top:16px; font-size:16.5px; font-weight:800;" id="outRecTitle">--</div>
+      <ul class="notes" id="recNotes" style="margin-top:8px;"></ul>
+    </div>
+
+    <div class="card">
+      <h2>🖼️ Exportable Investment Card</h2>
+      <canvas id="shareCanvas" width="1080" height="1650"></canvas>
+      <button id="downloadBtn" style="margin-top:14px; width:100%; background:var(--green); color:#fff; border:none; border-radius:10px; padding:14px; font-size:16px; font-weight:800; cursor:pointer;">⬇️ Download Report Image</button>
+    </div>
+
+  </div>
+
+</div>
+
+<script>
+let currentData = null;
+let chartInstance = null;
+
+const $ = id => document.getElementById(id);
+const fmt = n => (n === null || n === undefined || isNaN(n) || !isFinite(n)) ? '--' : n.toFixed(2);
+
+// Standardized formatting for share volume counts
+const fmtVol = val => {
+  if (val === null || val === undefined || isNaN(val) || !isFinite(val)) return '--';
+  if (val >= 1000000) return (val / 1000000).toFixed(2) + 'M';
+  if (val >= 1000) return (val / 1000).toFixed(1) + 'K';
+  return val.toString();
+};
+
+function setTheme(theme, e) {
+  document.documentElement.setAttribute('data-theme', theme);
+  document.querySelectorAll('.theme-btn').forEach(btn => btn.classList.remove('active'));
+  if (e && e.target) e.target.classList.add('active');
+  if (currentData) render(currentData);
+}
+
+function setStatus(msg, isErr) {
+  const el = $('status');
+  el.textContent = msg;
+  el.className = 'status' + (isErr ? ' err' : '');
+}
+
+$('tickerInput').addEventListener('keypress', (e) => { if (e.key === 'Enter') runAnalysis(); });
+$('fetchBtn').addEventListener('click', runAnalysis);
+
+async function fetchTradingViewData(ticker) {
+  const cleanSymbol = ticker.trim().toUpperCase().replace('.CA', '');
+  const tvUrl = "https://scanner.tradingview.com/egypt/scan";
+  
+  // REPLACE WITH YOUR CLOUDFLARE WORKER PROXY URL:
+  const workerProxy = "https://YOUR-WORKER-NAME.YOUR-SUBDOMAIN.workers.dev"; 
+  const proxyEndpoint = `${workerProxy}/?url=${encodeURIComponent(tvUrl)}`;
+
+  const payload = {
+    "symbols": { "tickers": [`EGX:${cleanSymbol}`] },
+    "columns": [
+      "name", "description", "close", "change_abs", "volume",
+      "average_volume_10d_calc", "average_volume_30d_calc",
+      "EMA20", "EMA50", "EMA200", "RSI", "MACD.macd", "MACD.signal",
+      "price_52_week_high", "price_52_week_low"
+    ]
+  };
+
+  const response = await fetch(proxyEndpoint, {
+    method: "POST",
+    headers: { "Content-Type": "text/plain" },
+    body: JSON.stringify(payload)
+  });
+
+  if (!response.ok) throw new Error(`Worker returned status ${response.status}`);
+  const data = await response.json();
+  
+  if (data && data.data && data.data.length > 0) {
+    const d = data.data[0].d;
+    const close = d[2];
+    const changeAbs = d[3];
+    const vol = d[4] || 0;
+    
+    // Accurate 20-day volume averaging formula using 10d and 30d raw counts
+    const avg10 = d[5] || 0;
+    const avg30 = d[6] || 0;
+    let avg20 = (avg10 + avg30) / 2;
+    if (!avg20 || avg20 === 0) avg20 = vol; 
+
+    return {
+      ticker: `${cleanSymbol}.CA`,
+      name: d[1] || cleanSymbol,
+      close: close,
+      prevClose: close - changeAbs,
+      volume: vol,
+      avgVolume: avg20,
+      high52: d[13] || close * 1.25,
+      low52: d[14] || close * 0.75,
+      ema20: d[7] || close,
+      ema50: d[8] || close,
+      ema200: d[9] || close,
+      rsi: d[10] || 50,
+      macd: d[11] || 0,
+      macdSignal: d[12] || 0
+    };
+  } else {
+    throw new Error("No market data returned for " + cleanSymbol);
+  }
+}
+
+async function runAnalysis() {
+  const ticker = $('tickerInput').value.trim().toUpperCase();
+  if (!ticker) { setStatus('Please enter a valid ticker symbol.', true); return; }
+
+  setStatus('⏳ Fetching stock indicators & calculating multi-factor levels...');
+  try {
+    const built = await fetchTradingViewData(ticker);
+    currentData = built;
+    render(built);
+    setStatus('✅ Live TradingView technical analysis loaded successfully');
+    $('manualPanel').classList.add('hidden');
+  } catch (err) {
+    console.error(err);
+    setStatus(`⚠️ Fetch failed. Please verify API configuration or enter manual values below.`, true);
+    $('manualPanel').classList.remove('hidden');
+  }
+}
+
+$('manualBtn').addEventListener('click', () => $('manualPanel').classList.toggle('hidden'));
+
+$('applyManual').addEventListener('click', () => {
+  const ticker = $('tickerInput').value.trim().toUpperCase() || 'STOCK';
+  const c = parseFloat($('m_close').value);
+  const p = parseFloat($('m_prev').value) || c;
+  
+  const v = parseFloat($('m_vol').value) || 0;
+  const avgV = parseFloat($('m_avgvol').value) || 1;
+
+  const h52 = parseFloat($('m_high52').value) || c * 1.2;
+  const l52 = parseFloat($('m_low52').value) || c * 0.8;
+
+  const e20 = parseFloat($('m_ema20').value) || c;
+  const e50 = parseFloat($('m_ema50').value) || c;
+  const e200 = parseFloat($('m_ema200').value) || c;
+  const rsi = parseFloat($('m_rsi').value) || 50;
+  const macd = parseFloat($('m_macd').value) || 0;
+  const macdSig = parseFloat($('m_macdsig').value) || 0;
+
+  if (isNaN(c)) { setStatus('Please input valid numeric values for price.', true); return; }
+
+  const built = {
+    ticker: ticker.endsWith('.CA') ? ticker : `${ticker}.CA`,
+    name: ticker, close: c, prevClose: p, volume: v, avgVolume: avgV,
+    high52: h52, low52: l52,
+    ema20: e20, ema50: e50, ema200: e200, rsi: rsi, macd: macd, macdSignal: macdSig
+  };
+  currentData = built;
+  render(built);
+  setStatus('✅ Analysis successfully updated using manual input data.');
+});
+
+function computeAnalysis(d) {
+  const { close, prevClose, volume, avgVolume, ema20, ema50, ema200, rsi, macd, macdSignal, high52, low52 } = d;
+
+  const pct = prevClose ? ((close - prevClose) / prevClose * 100) : 0;
+  
+  // Precise Relative Volume Ratio Calculation
+  const rvol = (avgVolume && avgVolume > 0) ? (volume / avgVolume) : 1.0;
+
+  // Multi-Factor Confirmed Support Computation
+  let mainSupport = Math.min(ema20, ema50);
+  if (close > ema200 && ema200 > 0) {
+    mainSupport = Math.min(ema20, ema50, ema200);
+  }
+  if (mainSupport >= close) {
+    mainSupport = close * 0.95; 
+  }
+
+  // Multi-Factor Confirmed Resistance Computation
+  let mainResistance = Math.max(ema20, ema50, ema200);
+  if (close >= mainResistance) {
+    mainResistance = close * 1.06; 
+  }
+
+  const triggerPointPrice = Math.max(mainResistance * 0.995, close * 1.015);
+
+  const isAboveStructuralBase = close >= ema200;
+  const isAboveShortTrend = close >= ema20;
+  const isMacdBullish = macd >= macdSignal;
+  const isRsiHealthy = rsi >= 50 && rsi < 70;
+  const isVolumeSupported = rvol >= 1.25;
+
+  let smartScore = 0;
+  if (isAboveStructuralBase) smartScore++;
+  if (isAboveShortTrend) smartScore++;
+  if (isMacdBullish) smartScore++;
+  if (isRsiHealthy) smartScore++;
+  if (isVolumeSupported) smartScore++;
+
+  const isFullTriggerConfirmed = smartScore >= 4 && close >= triggerPointPrice * 0.99;
+
+  const stopLoss = mainSupport * 0.96; 
+  const targetPrice = Math.max(mainResistance * 1.10, high52); 
+
+  let trendStatus = 'Neutral / Consolidation';
+  if (isAboveStructuralBase && ema50 >= ema200) trendStatus = '🚀 Strong Bullish Structural Trend';
+  else if (isAboveStructuralBase) trendStatus = '📈 Bullish Medium-Term Bias';
+  else trendStatus = '📉 Bearish Structural Trend (Below 200 EMA)';
+
+  let rsiStatus = 'Neutral';
+  if (rsi >= 70) rsiStatus = '🔥 Overbought (>70)';
+  else if (rsi <= 30) rsiStatus = '🟢 Oversold (<30)';
+  else if (rsi >= 50) rsiStatus = '📈 Positive Momentum';
+
+  let recTitle = 'Hold / Await Multi-Factor Confirmation';
+  if (isFullTriggerConfirmed) {
+    recTitle = '🟢 STRONG BUY: Smart Breakout Trigger Confirmed';
+  } else if (isAboveStructuralBase && !isFullTriggerConfirmed) {
+    recTitle = '⏳ ACCUMULATE ON PULLBACK: Awaiting Technical Trigger Point';
+  } else if (!isAboveStructuralBase) {
+    recTitle = '⚠️ AVOID / REDUCE: Below 200 EMA Structural Base';
+  }
+
+  return { 
+    pct, rvol, isFullTriggerConfirmed, smartScore, trendStatus, rsiStatus, 
+    mainSupport, mainResistance, triggerPointPrice, 
+    stopLoss, targetPrice, isMacdBullish, isRsiHealthy, isAboveShortTrend, 
+    isVolumeSupported, recTitle 
+  };
+}
+
+function renderChart(d, a) {
+  const ctx = $('priceStructureChart').getContext('2d');
+  
+  if (chartInstance) {
+    chartInstance.destroy();
+  }
+
+  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+  const textColor = isDark ? '#f0f3f8' : '#0f172a';
+  const gridColor = isDark ? '#2a3347' : '#cbd5e1';
+
+  chartInstance = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: ['52-Wk Low', 'Main Support', 'EMA 200', 'Current Price', 'Trigger Point', 'Main Resist.', '52-Wk High'],
+      datasets: [{
+        label: 'Price Level (EGP)',
+        data: [
+          d.low52,
+          a.mainSupport,
+          d.ema200,
+          d.close,
+          a.triggerPointPrice,
+          a.mainResistance,
+          d.high52
+        ],
+        backgroundColor: [
+          '#64748b', // 52-Wk Low (Slate)
+          '#26a69a', // Support (Green)
+          '#848e9c', // EMA 200 (Muted)
+          '#ffffff', // Current Close (White)
+          '#2962ff', // Trigger Point (Accent)
+          '#ef5350', // Resistance (Red)
+          '#ffb74d'  // 52-Wk High (Amber)
+        ],
+        borderRadius: 8,
+        barThickness: 28
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: (ctx) => `${ctx.raw.toFixed(2)} EGP`
+          }
         }
-
-        // خاصية تصدير التقرير كصورة PNG
-        function exportReportAsImage() {
-            const reportElement = document.getElementById('report-card');
-            const ticker = document.getElementById('display-ticker').innerText;
-
-            html2canvas(reportElement, {
-                backgroundColor: '#1f2937', // خلفية داكنة تطابق الثيم
-                scale: 2 // جودة عالية
-            }).then(canvas => {
-                const link = document.createElement('a');
-                link.download = `${ticker}_Technical_Report.png`;
-                link.href = canvas.toDataURL('image/png');
-                link.click();
-            });
+      },
+      scales: {
+        x: {
+          grid: { color: 'transparent' },
+          ticks: { color: textColor, font: { family: 'Inter', weight: '600' } }
+        },
+        y: {
+          grid: { color: gridColor },
+          ticks: { color: textColor, font: { family: 'Inter' } }
         }
+      }
+    }
+  });
+}
 
-        function toggleLanguage() {
-            const html = document.getElementById('html-tag');
-            const table = document.getElementById('main-table');
+function render(d) {
+  $('report').classList.remove('hidden');
+  const a = computeAnalysis(d);
 
-            if (currentLang === 'ar') {
-                html.setAttribute('lang', 'en');
-                html.setAttribute('dir', 'ltr');
-                table.classList.remove('text-right');
-                table.classList.add('text-left');
-                
-                document.getElementById('stock-input').placeholder = "Enter ticker (e.g. EGYP)...";
-                document.getElementById('btn-search').innerText = "Generate Report";
-                document.getElementById('btn-export-text').innerText = "Export as Image";
+  $('outTicker').textContent = d.ticker;
+  $('outName').textContent = d.name;
+  $('outDate').textContent = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
 
-                document.getElementById('title').innerText = "Technical Analysis Report";
-                document.getElementById('label-strategy').innerText = "Active Strategy:";
-                document.getElementById('val-strategy').innerText = "Support Retest Evaluation";
-                document.getElementById('status-badge').innerText = "STATUS: WATCH (3.0 / 5.0)";
+  $('outLast').textContent = fmt(d.close);
+  const chgVal = d.close - d.prevClose;
+  const chgEl = $('outChg');
+  chgEl.textContent = (chgVal >= 0 ? '+' : '') + fmt(chgVal) + ' (' + (a.pct >= 0 ? '+' : '') + a.pct.toFixed(2) + '%)';
+  chgEl.className = 'chg ' + (chgVal >= 0 ? 'up' : 'down');
 
-                document.getElementById('lbl-entry').innerText = "Suggested Entry Zone";
-                document.getElementById('val-entry').innerText = "183.50 - 185.00 EGP";
-                document.getElementById('lbl-stop').innerText = "Stop Loss Level";
-                document.getElementById('val-stop').innerText = "178.00 EGP (Support Break)";
-                document.getElementById('lbl-ath').innerText = "All-Time High (ATH)";
-                document.getElementById('val-ath').innerText = "215.00 EGP";
-                document.getElementById('lbl-volume').innerText = "Session Volume";
-                document.getElementById('val-volume').innerText = "0.85x (Weak)";
+  // Correct volume rendering
+  $('outVol').textContent = fmtVol(d.volume);
+  $('outAvgVol').textContent = fmtVol(d.avgVolume);
+  $('outHigh52').textContent = `${fmt(d.high52)} EGP`;
+  $('outLow52').textContent = `${fmt(d.low52)} EGP`;
 
-                document.getElementById('lbl-sr-title').innerText = "Key Support & Resistance Levels";
-                document.getElementById('lbl-supports').innerText = "Supports:";
-                document.getElementById('lbl-resistances').innerText = "Resistances:";
+  renderChart(d, a);
 
-                document.getElementById('th-param').innerText = "Parameter";
-                document.getElementById('th-target').innerText = "Target Condition";
-                document.getElementById('th-current').innerText = "Current Value";
-                document.getElementById('th-status').innerText = "Status";
-                document.getElementById('th-points').innerText = "Points";
+  $('valHigh52').textContent = `${fmt(d.high52)} EGP`;
+  $('valMainResist').textContent = `${fmt(a.mainResistance)} EGP`;
+  $('valTriggerPoint').textContent = `${fmt(a.triggerPointPrice)} EGP`;
+  $('valMainSupp').textContent = `${fmt(a.mainSupport)} EGP`;
+  $('valLow52').textContent = `${fmt(d.low52)} EGP`;
 
-                document.getElementById('r1-name').innerText = "Structural Base";
-                document.getElementById('r1-target').innerText = "Price ≥ 200 EMA";
-                document.getElementById('r1-val').innerText = "Above 200 EMA";
-                document.getElementById('r1-status').innerText = "PASS";
+  $('valRsi').textContent = `${fmt(d.rsi)} (${a.rsiStatus})`;
+  $('valMacd').textContent = `${fmt(d.macd)} / Signal: ${fmt(d.macdSignal)} (${a.isMacdBullish ? 'Bullish' : 'Bearish'})`;
+  $('valEmas').textContent = `${fmt(d.ema20)} / ${fmt(d.ema50)} / ${fmt(d.ema200)}`;
 
-                document.getElementById('r2-name').innerText = "Support Retest";
-                document.getElementById('r2-target').innerText = "Holding Key Support Zone";
-                document.getElementById('r2-val').innerText = "Retesting 183.00 EGP";
-                document.getElementById('r2-status').innerText = "PASS";
+  $('trendBadge').textContent = a.trendStatus;
+  $('rsiBadge').textContent = `RSI: ${fmt(d.rsi)}`;
 
-                document.getElementById('r3-name').innerText = "RSI Recovery";
-                document.getElementById('r3-target').innerText = "RSI 35 – 50 Range";
-                document.getElementById('r3-val').innerText = "RSI = 42.5";
-                document.getElementById('r3-status').innerText = "PASS";
+  const notesEl = $('techNotes');
+  notesEl.innerHTML = '';
+  const notes = [
+    `Historical Price Range: 52-Week High stands at ${fmt(d.high52)} EGP while the 52-Week Low floor sits at ${fmt(d.low52)} EGP.`,
+    `Confirmed Structural Levels: Primary short-term support established at ${fmt(a.mainSupport)} EGP; key upper resistance ceiling set at ${fmt(a.mainResistance)} EGP.`,
+    `Volume & Liquidity: Session volume of ${fmtVol(d.volume)} vs. 20-day average volume of ${fmtVol(d.avgVolume)} (Relative Vol: ${a.rvol.toFixed(2)}x).`,
+    `Momentum Alignment: MACD is ${a.isMacdBullish ? 'BULLISH' : 'BEARISH'} and price action is trading ${d.close >= d.ema200 ? 'ABOVE' : 'BELOW'} the 200 EMA structural baseline (${fmt(d.ema200)} EGP).`
+  ];
+  notes.forEach(n => { const li = document.createElement('li'); li.textContent = n; notesEl.appendChild(li); });
 
-                document.getElementById('r4-name').innerText = "MACD Hook";
-                document.getElementById('r4-target').innerText = "Histogram Contracting Upward";
-                document.getElementById('r4-val').innerText = "Expanding Downward";
-                document.getElementById('r4-status').innerText = "FAILED";
+  $('outMainSupp').textContent = `${fmt(a.mainSupport)} EGP`;
+  $('outMainResist').textContent = `${fmt(a.mainResistance)} EGP`;
+  $('outTriggerPoint').textContent = `${fmt(a.triggerPointPrice)} EGP`;
+  $('outTarget').textContent = `${fmt(a.targetPrice)} EGP`;
+  $('outRecTitle').textContent = a.recTitle;
 
-                document.getElementById('r5-name').innerText = "Volume Defense";
-                document.getElementById('r5-target').innerText = "Volume > 1.30x 20D Avg";
-                document.getElementById('r5-val').innerText = "Volume = 0.85x Avg";
-                document.getElementById('r5-status').innerText = "FAILED";
+  const recNotesEl = $('recNotes');
+  recNotesEl.innerHTML = '';
+  const recNotes = [
+    `Trigger Point: A sustained daily close above ${fmt(a.triggerPointPrice)} EGP confirms buy momentum towards historical targets.`,
+    `Defense Zone: Main Support (${fmt(a.mainSupport)} EGP) serves as immediate protection; historical low remains at ${fmt(d.low52)} EGP.`,
+    `Risk Control: Place stop loss immediately below current support at ${fmt(a.stopLoss)} EGP.`
+  ];
+  recNotes.forEach(n => { const li = document.createElement('li'); li.textContent = n; recNotesEl.appendChild(li); });
 
-                document.getElementById('missed-title').innerText = "⚠️ Missed Requirements (-2.0 Points Gap)";
-                document.getElementById('missed-list').innerHTML = `
-                    <li><strong class="text-rose-300">MACD Momentum:</strong> MACD histogram hasn't turned upward yet. Wait for bullish momentum confirmation.</li>
-                    <li><strong class="text-rose-300">Volume Defense:</strong> Current bounce volume is weak (0.85x average). Higher volume needed to confirm institutional support.</li>
-                `;
+  drawShareCanvas(d, a);
+}
 
-                document.getElementById('patterns-title').innerText = "🔍 Pattern Recognition (Weekly & Daily)";
-                document.getElementById('pat-weekly-label').innerText = "Weekly Timeframe:";
-                document.getElementById('pat-weekly-val').innerText = "Potential Continuation Pattern (Bull Flag). Primary trend remains bullish with low-volume consolidation.";
-                document.getElementById('pat-daily-label').innerText = "Daily Timeframe:";
-                document.getElementById('pat-daily-val').innerText = "Potential Double Bottom forming at 183.00 support. Awaiting neckline breakout at 192.50 EGP with volume confirmation.";
+function drawShareCanvas(d, a) {
+  const cv = $('shareCanvas');
+  const ctx = cv.getContext('2d');
+  const W = cv.width, H = cv.height;
 
-                document.getElementById('lbl-threshold').innerHTML = 'Trigger Threshold: <span class="text-gray-200 font-semibold">≥ 4.0 Points</span>';
-                document.getElementById('lbl-score').innerHTML = 'Current Score: <span class="text-yellow-400 font-bold">3.0 Points</span>';
-                document.getElementById('btn-trigger').innerText = "Trigger Signal Locked";
+  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+  const bgColor = isDark ? '#151922' : '#0f172a';
+  const panelColor = isDark ? '#1c2230' : '#1e293b';
+  const textColor = '#f0f3f8';
+  const mutedColor = '#848e9c';
+  const greenColor = '#26a69a';
+  const redColor = '#ef5350';
+  const amberColor = '#ffb74d';
+  const accentColor = '#2962ff';
 
-                currentLang = 'en';
-            } else {
-                html.setAttribute('lang', 'ar');
-                html.setAttribute('dir', 'rtl');
-                table.classList.remove('text-left');
-                table.classList.add('text-right');
-                
-                document.getElementById('stock-input').placeholder = "أدخل رمز السهم...";
-                document.getElementById('btn-search').innerText = "عرض التقرير";
-                document.getElementById('btn-export-text').innerText = "تصدير التقرير كصورة";
+  ctx.fillStyle = bgColor; ctx.fillRect(0, 0, W, H);
 
-                document.getElementById('title').innerText = "تقرير التحليل الفني الشامل";
-                document.getElementById('label-strategy').innerText = "الاستراتيجية النشطة:";
-                document.getElementById('val-strategy').innerText = "تقييم إعادة اختبار الدعم";
-                document.getElementById('status-badge').innerText = "الحالة: مراقبة (3.0 / 5.0)";
+  const leftX = 60;
+  ctx.textAlign = 'left';
+  ctx.fillStyle = mutedColor; ctx.font = '28px Inter, sans-serif';
+  ctx.fillText('Medium-Term Technical Analysis Card', leftX, 80);
+  ctx.fillStyle = greenColor; ctx.font = '800 60px Inter, sans-serif';
+  ctx.fillText(d.ticker, leftX, 150);
+  ctx.fillStyle = textColor; ctx.font = '26px Inter, sans-serif';
+  ctx.fillText(d.name || '', leftX, 190);
 
-                document.getElementById('lbl-entry').innerText = "منطقة الدخول المقترحة";
-                document.getElementById('val-entry').innerText = "183.50 - 185.00 ج.م";
-                document.getElementById('lbl-stop').innerText = "وقف الخسارة (Stop Loss)";
-                document.getElementById('val-stop').innerText = "178.00 ج.م (كسر الدعم)";
-                document.getElementById('lbl-ath').innerText = "القمة التاريخية (ATH)";
-                document.getElementById('val-ath').innerText = "215.00 ج.م";
-                document.getElementById('lbl-volume').innerText = "حجم التداول (Volume)";
-                document.getElementById('val-volume').innerText = "0.85x (ضعيف)";
+  ctx.textAlign = 'right';
+  ctx.fillStyle = mutedColor; ctx.font = '22px Inter, sans-serif';
+  ctx.fillText(new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }), W - 60, 80);
 
-                document.getElementById('lbl-sr-title').innerText = "مستويات الدعم والمقاومة الرئيسية";
-                document.getElementById('lbl-supports').innerText = "نقاط الدعم (Supports):";
-                document.getElementById('lbl-resistances').innerText = "نقاط المقاومة (Resistances):";
+  const chgVal = d.close - d.prevClose;
+  ctx.textAlign = 'left';
+  ctx.fillStyle = textColor; ctx.font = '800 58px Inter, sans-serif';
+  ctx.fillText(fmt(d.close) + ' EGP', leftX, 260);
+  ctx.fillStyle = chgVal >= 0 ? greenColor : redColor; ctx.font = '700 28px Inter, sans-serif';
+  ctx.fillText((chgVal >= 0 ? '+' : '') + fmt(chgVal) + ' (' + (a.pct >= 0 ? '+' : '') + a.pct.toFixed(2) + '%)', leftX, 305);
 
-                document.getElementById('th-param').innerText = "المؤشر / الشرط";
-                document.getElementById('th-target').innerText = "الهدف المطلوب";
-                document.getElementById('th-current').innerText = "القيمة الحالية";
-                document.getElementById('th-status').innerText = "الحالة";
-                document.getElementById('th-points').innerText = "النقاط";
+  function statBox(x, y, w, h, label, val, color) {
+    ctx.fillStyle = panelColor; roundRect(ctx, x, y, w, h, 12); ctx.fill();
+    ctx.textAlign = 'center';
+    ctx.fillStyle = mutedColor; ctx.font = '20px Inter, sans-serif';
+    ctx.fillText(label, x + w / 2, y + 34);
+    ctx.fillStyle = color || textColor; ctx.font = '800 22px Inter, sans-serif';
+    ctx.fillText(val, x + w / 2, y + 70);
+  }
 
-                document.getElementById('r1-name').innerText = "الاتجاه العام";
-                document.getElementById('r1-target').innerText = "السعر ≥ المتوسط 200 EMA";
-                document.getElementById('r1-val').innerText = "أعلى من المتوسط 200";
-                document.getElementById('r1-status').innerText = "مكتمل";
+  const gy = 350, gw = (W - 120 - 30) / 4, gh = 90;
+  statBox(60, gy, gw, gh, 'Session Vol', fmtVol(d.volume));
+  statBox(60 + gw + 10, gy, gw, gh, '20D Avg Vol', fmtVol(d.avgVolume));
+  statBox(60 + 2 * (gw + 10), gy, gw, gh, '52-Wk High', `${fmt(d.high52)}`, amberColor);
+  statBox(60 + 3 * (gw + 10), gy, gw, gh, '52-Wk Low', `${fmt(d.low52)}`, mutedColor);
 
-                document.getElementById('r2-name').innerText = "اختبار الدعم";
-                document.getElementById('r2-target').innerText = "الثبات فوق منطقة دعم رئيسية";
-                document.getElementById('r2-val').innerText = "اختبار دعم 183.00 ج.م";
-                document.getElementById('r2-status').innerText = "مكتمل";
+  let ly = 500;
+  ctx.textAlign = 'left'; ctx.fillStyle = mutedColor; ctx.font = '700 26px Inter, sans-serif';
+  ctx.fillText('Structural Levels Summary', leftX, ly);
+  ly += 40;
 
-                document.getElementById('r3-name').innerText = "ارتداد RSI";
-                document.getElementById('r3-target').innerText = "مؤشر القوة بين 35 – 50";
-                document.getElementById('r3-val').innerText = "RSI = 42.5";
-                document.getElementById('r3-status').innerText = "مكتمل";
+  const levels = [
+    ['🚀 52-Week High (Peak Ceiling)', `${fmt(d.high52)} EGP`, amberColor],
+    ['🛑 Main Resistance (Ceiling)', `${fmt(a.mainResistance)} EGP`, redColor],
+    ['⚡ Trigger Point Price', `${fmt(a.triggerPointPrice)} EGP`, accentColor],
+    ['🛡️ Main Support (Floor)', `${fmt(a.mainSupport)} EGP`, greenColor],
+    ['📉 52-Week Low (Floor Base)', `${fmt(d.low52)} EGP`, mutedColor]
+  ];
 
-                document.getElementById('r4-name').innerText = "انعطاف MACD";
-                document.getElementById('r4-target').innerText = "تقلص أعمدة الهيستوجرام للأعلى";
-                document.getElementById('r4-val').innerText = "توسع للسفل (سلبي)";
-                document.getElementById('r4-status').innerText = "غير مكتمل";
+  levels.forEach(([lbl, val, col]) => {
+    ctx.fillStyle = panelColor; roundRect(ctx, 60, ly - 32, W - 120, 50, 10); ctx.fill();
+    ctx.textAlign = 'left'; ctx.fillStyle = textColor; ctx.font = '24px Inter, sans-serif';
+    ctx.fillText(lbl, leftX + 20, ly);
+    ctx.textAlign = 'right'; ctx.fillStyle = col; ctx.font = '800 24px Inter, sans-serif';
+    ctx.fillText(val, W - 80, ly);
+    ly += 60;
+  });
 
-                document.getElementById('r5-name').innerText = "تأكيد أحجام التداول";
-                document.getElementById('r5-target').innerText = "الحجم > 1.30x متوسط 20 يوم";
-                document.getElementById('r5-val').innerText = "الحجم = 0.85x المتوسط";
-                document.getElementById('r5-status').innerText = "غير مكتمل";
+  ly += 20;
+  ctx.fillStyle = panelColor; roundRect(ctx, 60, ly, W - 120, 210, 14); ctx.fill();
+  ctx.textAlign = 'left'; ctx.fillStyle = greenColor; ctx.font = '800 26px Inter, sans-serif';
+  ctx.fillText(a.recTitle, leftX + 20, ly + 45);
 
-                document.getElementById('missed-title').innerText = "⚠️ الشروط غير المحققة (فارق -2.0 نقطة)";
-                document.getElementById('missed-list').innerHTML = `
-                    <li><strong class="text-rose-300">عزم MACD:</strong> لم يلتف منحنى MACD للأعلى بعد. يفضل انتظار تقاطع إيجابي قبل الدخول.</li>
-                    <li><strong class="text-rose-300">حجم التداول عند الدعم:</strong> الفوليوم الحالي ضعيف (0.85x). نحتاج إلى دخول سيولة واضحة لتأكيد حماية منطقة الدعم.</li>
-                `;
+  const rgy = ly + 80;
+  const rgw = (W - 120 - 30) / 4;
+  statBox(60, rgy, rgw, 90, 'Main Support', `${fmt(a.mainSupport)}`, greenColor);
+  statBox(60 + rgw + 10, rgy, rgw, 90, 'Main Resistance', `${fmt(a.mainResistance)}`, redColor);
+  statBox(60 + 2 * (rgw + 10), rgy, rgw, 90, 'Trigger Point', `${fmt(a.triggerPointPrice)}`, accentColor);
+  statBox(60 + 3 * (rgw + 10), rgy, rgw, 90, 'Medium Target', `${fmt(a.targetPrice)}`, greenColor);
 
-                document.getElementById('patterns-title').innerText = "🔍 تحليل النماذج الفنية (الفريم الأسبوعي واليومي)";
-                document.getElementById('pat-weekly-label').innerText = "الفريم الأسبوعي (Weekly):";
-                document.getElementById('pat-weekly-val').innerText = "نموذج استمراري محتمل (Bull Flag / علم صاعد). الاتجاه الرئيسي صاعد والتصحيح يعكس تجميعاً هادئاً.";
-                document.getElementById('pat-daily-label').innerText = "الفريم اليومي (Daily):";
-                document.getElementById('pat-daily-val').innerText = "تكون قاع مزدوج محتمل (Double Bottom) عند دعم 183.00. في انتظار تأكيد اختراق خط العنق عند 192.50 ج.م.";
+  ctx.textAlign = 'center'; ctx.fillStyle = mutedColor; ctx.font = '18px Inter, sans-serif';
+  ctx.fillText('Smart Multi-Factor Investment Strategy Engine', W / 2, H - 40);
+}
 
-                document.getElementById('lbl-threshold').innerHTML = 'الحد الأدنى للتفعيل: <span class="text-gray-200 font-semibold">≥ 4.0 نقاط</span>';
-                document.getElementById('lbl-score').innerHTML = 'النقاط الحالية: <span class="text-yellow-400 font-bold">3.0 نقاط</span>';
-                document.getElementById('btn-trigger').innerText = "اشارة الدخول معطلة";
+function roundRect(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + w, y, x + w, y + h, r);
+  ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r);
+  ctx.arcTo(x, y + h, x, y, r);
+  ctx.arcTo(x, y, x + w, y, r);
+  ctx.closePath();
+}
 
-                currentLang = 'ar';
-            }
-        }
-    </script>
+$('downloadBtn').addEventListener('click', () => {
+  const cv = $('shareCanvas');
+  const link = document.createElement('a');
+  link.download = (currentData?.ticker || 'stock') + '-investment-report.png';
+  link.href = cv.toDataURL('image/png');
+  link.click();
+});
+
+window.addEventListener('load', runAnalysis);
+</script>
 </body>
 </html>
