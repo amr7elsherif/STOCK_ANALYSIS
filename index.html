@@ -174,10 +174,12 @@
       </div>
     </div>
 
-    <!-- Technical Indicators Panel -->
+    <!-- Technical Indicators & Key Structural Levels Panel -->
     <div class="card">
-      <h2>⚙️ Medium-Term Technical Indicators</h2>
+      <h2>⚙️ Key Structural Levels & Technical Indicators</h2>
       <table class="levels">
+        <tr><td>🛑 Main Resistance (Ceiling)</td><td id="valMainResist" style="color:var(--red)">--</td></tr>
+        <tr><td>🛡️ Main Support (Floor)</td><td id="valMainSupp" style="color:var(--green)">--</td></tr>
         <tr><td>RSI (14-period)</td><td id="valRsi">--</td></tr>
         <tr><td>MACD (12, 26, 9)</td><td id="valMacd">--</td></tr>
         <tr><td>EMA 20 (Short Trend)</td><td id="valEma20">--</td></tr>
@@ -199,10 +201,10 @@
     <div class="card">
       <h2>🎯 Medium-Term Entry & Position Parameters</h2>
       <div class="grid4">
-        <div class="stat"><div class="lbl">Ideal Buy Zone</div><div class="val" id="outBuyZone" style="color:var(--green)">--</div></div>
+        <div class="stat"><div class="lbl">Main Support</div><div class="val" id="outMainSupp" style="color:var(--green)">--</div></div>
+        <div class="stat"><div class="lbl">Main Resistance</div><div class="val" id="outMainResist" style="color:var(--red)">--</div></div>
         <div class="stat"><div class="lbl">Trigger Price Point</div><div class="val" id="outTriggerPoint" style="color:var(--accent)">--</div></div>
         <div class="stat"><div class="lbl">Medium Target</div><div class="val" id="outTarget" style="color:var(--green)">--</div></div>
-        <div class="stat"><div class="lbl">Structural Stop Loss</div><div class="val" id="outStop" style="color:var(--red)">--</div></div>
       </div>
       <div style="margin-top:16px; font-size:16.5px; font-weight:800;" id="outRecTitle">--</div>
       <ul class="notes" id="recNotes" style="margin-top:8px;"></ul>
@@ -210,7 +212,7 @@
 
     <div class="card">
       <h2>🖼️ Exportable Investment Card</h2>
-      <canvas id="shareCanvas" width="1080" height="1450"></canvas>
+      <canvas id="shareCanvas" width="1080" height="1550"></canvas>
       <button id="downloadBtn" style="margin-top:14px; width:100%; background:var(--green); color:#fff; border:none; border-radius:10px; padding:14px; font-size:16px; font-weight:800; cursor:pointer;">⬇️ Download Report Image</button>
     </div>
 
@@ -250,7 +252,7 @@ async function fetchTradingViewData(ticker) {
   const tvUrl = "https://scanner.tradingview.com/egypt/scan";
   
   // REPLACE WITH YOUR CLOUDFLARE WORKER URL:
-  const workerProxy = "https://YOUR-WORKER-NAME.YOUR-SUBDOMAIN.workers.dev"; 
+  const workerProxy = "https://my-stock-proxy.amr7-elsherif.workers.dev/"; 
   const proxyEndpoint = `${workerProxy}/?url=${encodeURIComponent(tvUrl)}`;
 
   const payload = {
@@ -350,23 +352,35 @@ $('applyManual').addEventListener('click', () => {
   setStatus('✅ Report calculated using manual inputs.');
 });
 
-// SMART MULTI-FACTOR TECHNICAL ANALYSIS LOGIC
+// SMART MULTI-FACTOR TECHNICAL ANALYSIS LOGIC WITH SUPPORT & RESISTANCE
 function computeAnalysis(d) {
   const { close, prevClose, volume, avgVolume, ema20, ema50, ema200, rsi, macd, macdSignal } = d;
 
   const pct = prevClose ? ((close - prevClose) / prevClose * 100) : 0;
   const rvol = avgVolume > 0 ? (volume / avgVolume) : 1;
 
+  // Main Support & Resistance Calculation Logic
+  let mainSupport = Math.min(ema20, ema50);
+  if (close > ema200 && ema200 > 0) {
+    mainSupport = Math.min(ema20, ema50, ema200);
+  } else if (mainSupport > close) {
+    mainSupport = close * 0.95; 
+  }
+
+  let mainResistance = Math.max(ema20, ema50, ema200);
+  if (close >= mainResistance) {
+    mainResistance = close * 1.08; 
+  }
+
   // Multi-Factor Conditions
   const isAboveStructuralBase = close >= ema200;
   const isAboveShortTrend = close >= ema20;
-  const isAboveMediumTrend = close >= ema50;
   const isMacdBullish = macd >= macdSignal;
-  const isRsiHealthy = rsi >= 50 && rsi < 70; // Good momentum without being overbought
+  const isRsiHealthy = rsi >= 50 && rsi < 70; 
   const isVolumeSupported = rvol >= 1.30;
 
-  // Dynamic Trigger Point Calculation (Breaks above Resistance / Key EMA)
-  const triggerPointPrice = Math.max(ema20, ema50, close) * 1.01; 
+  // Dynamic Trigger Point Calculation (Breakout clear of Main Resistance)
+  const triggerPointPrice = Math.max(mainResistance * 0.995, close * 1.01); 
 
   // Multi-Factor Smart Score (out of 5)
   let smartScore = 0;
@@ -378,11 +392,11 @@ function computeAnalysis(d) {
 
   const isFullTriggerConfirmed = smartScore >= 4 && close >= triggerPointPrice * 0.99;
 
-  const buyZoneLow = Math.min(ema20, ema50);
-  const buyZoneHigh = Math.max(ema20, close);
+  const buyZoneLow = mainSupport;
+  const buyZoneHigh = Math.min(close, mainResistance * 0.98);
 
-  const stopLoss = Math.min(ema50, ema200) * 0.95; 
-  const targetPrice = close * (isAboveStructuralBase ? 1.25 : 1.15); 
+  const stopLoss = mainSupport * 0.96; 
+  const targetPrice = mainResistance * 1.12; 
 
   let trendStatus = 'Neutral / Consolidation';
   if (isAboveStructuralBase && ema50 >= ema200) trendStatus = '🚀 Strong Bullish Structural Uptrend';
@@ -405,8 +419,9 @@ function computeAnalysis(d) {
 
   return { 
     pct, rvol, isFullTriggerConfirmed, smartScore, trendStatus, rsiStatus, 
-    buyZoneLow, buyZoneHigh, triggerPointPrice, stopLoss, targetPrice, 
-    isMacdBullish, isRsiHealthy, isAboveShortTrend, isVolumeSupported, recTitle 
+    mainSupport, mainResistance, buyZoneLow, buyZoneHigh, triggerPointPrice, 
+    stopLoss, targetPrice, isMacdBullish, isRsiHealthy, isAboveShortTrend, 
+    isVolumeSupported, recTitle 
   };
 }
 
@@ -432,6 +447,8 @@ function render(d) {
   sStat.textContent = a.isFullTriggerConfirmed ? `🔥 TRIGGERED (${a.smartScore}/5)` : `⏳ PENDING (${a.smartScore}/5)`;
   sStat.style.color = a.isFullTriggerConfirmed ? 'var(--green)' : 'var(--amber)';
 
+  $('valMainResist').textContent = `${fmt(a.mainResistance)} EGP`;
+  $('valMainSupp').textContent = `${fmt(a.mainSupport)} EGP`;
   $('valRsi').textContent = `${fmt(d.rsi)} (${a.rsiStatus})`;
   $('valMacd').textContent = `${fmt(d.macd)} / Signal: ${fmt(d.macdSignal)} (${a.isMacdBullish ? 'Bullish Cross' : 'Bearish Cross'})`;
   $('valEma20').textContent = fmt(d.ema20);
@@ -444,24 +461,25 @@ function render(d) {
   const notesEl = $('techNotes');
   notesEl.innerHTML = '';
   const notes = [
+    `Main Support & Resistance: Structural floor identified at ${fmt(a.mainSupport)} EGP and primary ceiling overhead at ${fmt(a.mainResistance)} EGP.`,
     `Price Structure: Close is ${d.close >= d.ema200 ? 'ABOVE' : 'BELOW'} 200 EMA baseline (${fmt(d.ema200)} EGP) and ${a.isAboveShortTrend ? 'ABOVE' : 'BELOW'} 20 EMA short-term trend.`,
     `Momentum Alignment: MACD is ${a.isMacdBullish ? 'BULLISH (Line > Signal)' : 'BEARISH (Line < Signal)'} and RSI is ${a.isRsiHealthy ? 'HEALTHY (50-70 zone)' : 'OUTSIDE optimal buy zone'}.`,
-    `Smart Multi-Factor Score: Achieved ${a.smartScore}/5 parameters. Trigger point validation requires price breakout above ${fmt(a.triggerPointPrice)} EGP supported by MACD and trend structure.`
+    `Smart Multi-Factor Score: Achieved ${a.smartScore}/5 parameters. Trigger point validation requires price breakout above ${fmt(a.triggerPointPrice)} EGP.`
   ];
   notes.forEach(n => { const li = document.createElement('li'); li.textContent = n; notesEl.appendChild(li); });
 
-  $('outBuyZone').textContent = `${fmt(a.buyZoneLow)} - ${fmt(a.buyZoneHigh)}`;
+  $('outMainSupp').textContent = `${fmt(a.mainSupport)} EGP`;
+  $('outMainResist').textContent = `${fmt(a.mainResistance)} EGP`;
   $('outTriggerPoint').textContent = `${fmt(a.triggerPointPrice)} EGP`;
   $('outTarget').textContent = fmt(a.targetPrice);
-  $('outStop').textContent = fmt(a.stopLoss);
   $('outRecTitle').textContent = a.recTitle;
 
   const recNotesEl = $('recNotes');
   recNotesEl.innerHTML = '';
   const recNotes = [
-    `Trigger Activation: Confirmed entry upon a daily close exceeding ${fmt(a.triggerPointPrice)} EGP alongside MACD bullish continuation.`,
-    `Accumulation Zone: Primary buying zone defined between ${fmt(a.buyZoneLow)} - ${fmt(a.buyZoneHigh)} EGP.`,
-    `Risk Control: Maintain structural Stop Loss at ${fmt(a.stopLoss)} EGP.`
+    `Trigger Activation: Confirmed entry upon a daily close exceeding Main Resistance (${fmt(a.mainResistance)} EGP) or Trigger Point (${fmt(a.triggerPointPrice)} EGP).`,
+    `Primary Defense: Main Support acts as structural protection at ${fmt(a.mainSupport)} EGP.`,
+    `Risk Control: Maintain structural Stop Loss just below support at ${fmt(a.stopLoss)} EGP.`
   ];
   recNotes.forEach(n => { const li = document.createElement('li'); li.textContent = n; recNotesEl.appendChild(li); });
 
@@ -521,14 +539,14 @@ function drawShareCanvas(d, a) {
 
   let ly = 500;
   ctx.textAlign = 'left'; ctx.fillStyle = mutedColor; ctx.font = '700 26px Inter, sans-serif';
-  ctx.fillText('Medium-Term Indicators', leftX, ly);
+  ctx.fillText('Structural Levels & Indicators', leftX, ly);
   ly += 40;
   const levels = [
+    ['🛑 Main Resistance (Ceiling)', `${fmt(a.mainResistance)} EGP`, redColor],
+    ['🛡️ Main Support (Floor)', `${fmt(a.mainSupport)} EGP`, greenColor],
     ['RSI (14-period)', `${fmt(d.rsi)} (${a.rsiStatus})`, textColor],
     ['MACD Status', a.isMacdBullish ? 'Bullish (Above Signal)' : 'Bearish (Below Signal)', a.isMacdBullish ? greenColor : redColor],
-    ['EMA 20', fmt(d.ema20), textColor],
-    ['EMA 50', fmt(d.ema50), textColor],
-    ['EMA 200 (Long-Term Base)', fmt(d.ema200), textColor]
+    ['EMA 20 / 50 / 200', `${fmt(d.ema20)} / ${fmt(d.ema50)} / ${fmt(d.ema200)}`, textColor]
   ];
   levels.forEach(([lbl, val, col]) => {
     ctx.fillStyle = panelColor; roundRect(ctx, 60, ly - 32, W - 120, 50, 10); ctx.fill();
@@ -546,10 +564,10 @@ function drawShareCanvas(d, a) {
 
   const rgy = ly + 80;
   const rgw = (W - 120 - 30) / 4;
-  statBox(60, rgy, rgw, 90, 'Buy Zone', `${fmt(a.buyZoneLow)}-${fmt(a.buyZoneHigh)}`, greenColor);
-  statBox(60 + rgw + 10, rgy, rgw, 90, 'Trigger Point', `${fmt(a.triggerPointPrice)}`, accentColor);
-  statBox(60 + 2 * (rgw + 10), rgy, rgw, 90, 'Target', fmt(a.targetPrice), greenColor);
-  statBox(60 + 3 * (rgw + 10), rgy, rgw, 90, 'Stop Loss', fmt(a.stopLoss), redColor);
+  statBox(60, rgy, rgw, 90, 'Main Support', `${fmt(a.mainSupport)}`, greenColor);
+  statBox(60 + rgw + 10, rgy, rgw, 90, 'Main Resistance', `${fmt(a.mainResistance)}`, redColor);
+  statBox(60 + 2 * (rgw + 10), rgy, rgw, 90, 'Trigger Point', `${fmt(a.triggerPointPrice)}`, accentColor);
+  statBox(60 + 3 * (rgw + 10), rgy, rgw, 90, 'Target Price', fmt(a.targetPrice), greenColor);
 
   ctx.textAlign = 'center'; ctx.fillStyle = mutedColor; ctx.font = '18px Inter, sans-serif';
   ctx.fillText('Smart Multi-Factor Investment Strategy Engine', W / 2, H - 40);
