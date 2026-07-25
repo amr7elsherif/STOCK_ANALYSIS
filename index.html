@@ -93,7 +93,7 @@
   @media(min-width: 540px){ .grid4 { grid-template-columns: repeat(4, 1fr); } }
   .stat { background: var(--panel-2); border: 1px solid var(--line); border-radius: 12px; padding: 12px; text-align: center; }
   .stat .lbl { font-size: 12.5px; color: var(--muted); margin-bottom: 6px; }
-  .stat .val { font-size: 17px; font-weight: 800; }
+  .stat .val { font-size: 16px; font-weight: 800; }
 
   .levels { width: 100%; border-collapse: collapse; font-size: 15px; }
   .levels td { padding: 10px 6px; border-bottom: 1px solid var(--line); }
@@ -130,7 +130,7 @@
     <input id="tickerInput" placeholder="Ticker (e.g. ORAS, ETEL, COMI)" value="ORAS">
     <button id="fetchBtn">🔍 Analyze via TradingView</button>
     <button id="manualBtn" class="secondary">✍️ Manual Entry</button>
-    <div id="status" class="status">Enter ticker symbol to run medium-term trend & volume analysis.</div>
+    <div id="status" class="status">Enter ticker symbol to run smart medium-term trend & multi-factor trigger analysis.</div>
   </div>
 
   <!-- Manual Entry Panel -->
@@ -170,7 +170,7 @@
         <div class="stat"><div class="lbl">Session Vol</div><div class="val" id="outVol">--</div></div>
         <div class="stat"><div class="lbl">20D Avg Vol</div><div class="val" id="outAvgVol">--</div></div>
         <div class="stat"><div class="lbl">Relative Vol (RVOL)</div><div class="val" id="outRvol">--</div></div>
-        <div class="stat"><div class="lbl">Volume Trigger</div><div class="val" id="outVolStatus">--</div></div>
+        <div class="stat"><div class="lbl">Smart Trigger Signal</div><div class="val" id="outSmartTrigger">--</div></div>
       </div>
     </div>
 
@@ -200,7 +200,7 @@
       <h2>🎯 Medium-Term Entry & Position Parameters</h2>
       <div class="grid4">
         <div class="stat"><div class="lbl">Ideal Buy Zone</div><div class="val" id="outBuyZone" style="color:var(--green)">--</div></div>
-        <div class="stat"><div class="lbl">Volume Confirmation</div><div class="val" id="outVolTrigger">--</div></div>
+        <div class="stat"><div class="lbl">Trigger Price Point</div><div class="val" id="outTriggerPoint" style="color:var(--accent)">--</div></div>
         <div class="stat"><div class="lbl">Medium Target</div><div class="val" id="outTarget" style="color:var(--green)">--</div></div>
         <div class="stat"><div class="lbl">Structural Stop Loss</div><div class="val" id="outStop" style="color:var(--red)">--</div></div>
       </div>
@@ -250,7 +250,7 @@ async function fetchTradingViewData(ticker) {
   const tvUrl = "https://scanner.tradingview.com/egypt/scan";
   
   // REPLACE WITH YOUR CLOUDFLARE WORKER URL:
-  const workerProxy = "https://my-stock-proxy.amr7-elsherif.workers.dev"; 
+  const workerProxy = "https://YOUR-WORKER-NAME.YOUR-SUBDOMAIN.workers.dev"; 
   const proxyEndpoint = `${workerProxy}/?url=${encodeURIComponent(tvUrl)}`;
 
   const payload = {
@@ -277,7 +277,6 @@ async function fetchTradingViewData(ticker) {
     const changeAbs = d[3];
     const vol = d[4] || 0;
     
-    // Improved 20-Day Volume Average derivation
     const avg10 = d[5] || 0;
     const avg30 = d[6] || 0;
     let avg20 = (avg10 + avg30) / 2;
@@ -306,12 +305,12 @@ async function runAnalysis() {
   const ticker = $('tickerInput').value.trim().toUpperCase();
   if (!ticker) { setStatus('Please enter a valid ticker symbol.', true); return; }
 
-  setStatus('⏳ Fetching medium-term indicators & volume metrics from TradingView...');
+  setStatus('⏳ Running smart technical multi-factor analysis via TradingView...');
   try {
     const built = await fetchTradingViewData(ticker);
     currentData = built;
     render(built);
-    setStatus('✅ Live TradingView medium-term analysis loaded successfully');
+    setStatus('✅ Live TradingView smart technical analysis loaded successfully');
     $('manualPanel').classList.add('hidden');
   } catch (err) {
     console.error(err);
@@ -327,7 +326,6 @@ $('applyManual').addEventListener('click', () => {
   const c = parseFloat($('m_close').value);
   const p = parseFloat($('m_prev').value) || c;
   
-  // Inputs in Millions converted back to raw units for uniform computation
   const vInMillions = parseFloat($('m_vol').value) || 0;
   const avgVInMillions = parseFloat($('m_avgvol').value) || 0.000001;
   const v = vInMillions * 1000000;
@@ -352,43 +350,64 @@ $('applyManual').addEventListener('click', () => {
   setStatus('✅ Report calculated using manual inputs.');
 });
 
+// SMART MULTI-FACTOR TECHNICAL ANALYSIS LOGIC
 function computeAnalysis(d) {
   const { close, prevClose, volume, avgVolume, ema20, ema50, ema200, rsi, macd, macdSignal } = d;
 
   const pct = prevClose ? ((close - prevClose) / prevClose * 100) : 0;
   const rvol = avgVolume > 0 ? (volume / avgVolume) : 1;
-  const volumeTriggerMet = rvol >= 1.5;
 
-  const aboveEma200 = close >= ema200;
-  const goldenCross = ema50 >= ema200;
-  const macdBullish = macd > macdSignal;
+  // Multi-Factor Conditions
+  const isAboveStructuralBase = close >= ema200;
+  const isAboveShortTrend = close >= ema20;
+  const isAboveMediumTrend = close >= ema50;
+  const isMacdBullish = macd >= macdSignal;
+  const isRsiHealthy = rsi >= 50 && rsi < 70; // Good momentum without being overbought
+  const isVolumeSupported = rvol >= 1.30;
+
+  // Dynamic Trigger Point Calculation (Breaks above Resistance / Key EMA)
+  const triggerPointPrice = Math.max(ema20, ema50, close) * 1.01; 
+
+  // Multi-Factor Smart Score (out of 5)
+  let smartScore = 0;
+  if (isAboveStructuralBase) smartScore++;
+  if (isAboveShortTrend) smartScore++;
+  if (isMacdBullish) smartScore++;
+  if (isRsiHealthy) smartScore++;
+  if (isVolumeSupported) smartScore++;
+
+  const isFullTriggerConfirmed = smartScore >= 4 && close >= triggerPointPrice * 0.99;
 
   const buyZoneLow = Math.min(ema20, ema50);
   const buyZoneHigh = Math.max(ema20, close);
 
   const stopLoss = Math.min(ema50, ema200) * 0.95; 
-  const targetPrice = close * (aboveEma200 ? 1.25 : 1.15); 
+  const targetPrice = close * (isAboveStructuralBase ? 1.25 : 1.15); 
 
   let trendStatus = 'Neutral / Consolidation';
-  if (aboveEma200 && goldenCross) trendStatus = '🚀 Strong Bullish Structural Uptrend';
-  else if (aboveEma200) trendStatus = '📈 Bullish Medium-Term Bias';
+  if (isAboveStructuralBase && ema50 >= ema200) trendStatus = '🚀 Strong Bullish Structural Uptrend';
+  else if (isAboveStructuralBase) trendStatus = '📈 Bullish Medium-Term Bias';
   else trendStatus = '📉 Bearish Structural Bias (Below EMA 200)';
 
   let rsiStatus = 'Neutral';
   if (rsi >= 70) rsiStatus = '🔥 Overbought (>70)';
   else if (rsi <= 30) rsiStatus = '🟢 Oversold (<30)';
-  else if (rsi >= 55) rsiStatus = '📈 Bullish Momentum';
+  else if (rsi >= 50) rsiStatus = '📈 Positive Momentum';
 
-  let recTitle = 'Hold / Await Volume Confirmation';
-  if (aboveEma200 && macdBullish && volumeTriggerMet) {
-    recTitle = '🟢 STRONG BUY: Volume Breakout Confirmed';
-  } else if (aboveEma200 && rvol < 1.0) {
-    recTitle = '⏳ ACCUMULATE ON PULLBACK: Volume Below Trigger';
-  } else if (!aboveEma200) {
-    recTitle = '⚠️ AVOID / REDUCE: Price Below 200 EMA';
+  let recTitle = 'Hold / Await Multi-Factor Confirmation';
+  if (isFullTriggerConfirmed) {
+    recTitle = '🟢 STRONG BUY: Smart Breakout Triggered';
+  } else if (isAboveStructuralBase && !isFullTriggerConfirmed) {
+    recTitle = '⏳ ACCUMULATE ON PULLBACK: Awaiting Technical Trigger Point';
+  } else if (!isAboveStructuralBase) {
+    recTitle = '⚠️ AVOID / REDUCE: Structural Trend Weak';
   }
 
-  return { pct, rvol, volumeTriggerMet, trendStatus, rsiStatus, buyZoneLow, buyZoneHigh, stopLoss, targetPrice, macdBullish, recTitle };
+  return { 
+    pct, rvol, isFullTriggerConfirmed, smartScore, trendStatus, rsiStatus, 
+    buyZoneLow, buyZoneHigh, triggerPointPrice, stopLoss, targetPrice, 
+    isMacdBullish, isRsiHealthy, isAboveShortTrend, isVolumeSupported, recTitle 
+  };
 }
 
 function render(d) {
@@ -405,17 +424,16 @@ function render(d) {
   chgEl.textContent = (chgVal >= 0 ? '+' : '') + fmt(chgVal) + ' (' + (a.pct >= 0 ? '+' : '') + a.pct.toFixed(2) + '%)';
   chgEl.className = 'chg ' + (chgVal >= 0 ? 'up' : 'down');
 
-  // Formatted in Millions
   $('outVol').textContent = fmtMillions(d.volume);
   $('outAvgVol').textContent = fmtMillions(d.avgVolume);
   $('outRvol').textContent = `${a.rvol.toFixed(2)}x`;
   
-  const vStat = $('outVolStatus');
-  vStat.textContent = a.volumeTriggerMet ? '🔥 CONFIRMED (>1.5x)' : '⏳ LOW (Waiting Trigger)';
-  vStat.style.color = a.volumeTriggerMet ? 'var(--green)' : 'var(--amber)';
+  const sStat = $('outSmartTrigger');
+  sStat.textContent = a.isFullTriggerConfirmed ? `🔥 TRIGGERED (${a.smartScore}/5)` : `⏳ PENDING (${a.smartScore}/5)`;
+  sStat.style.color = a.isFullTriggerConfirmed ? 'var(--green)' : 'var(--amber)';
 
   $('valRsi').textContent = `${fmt(d.rsi)} (${a.rsiStatus})`;
-  $('valMacd').textContent = `${fmt(d.macd)} / Signal: ${fmt(d.macdSignal)} (${a.macdBullish ? 'Bullish Cross' : 'Bearish Cross'})`;
+  $('valMacd').textContent = `${fmt(d.macd)} / Signal: ${fmt(d.macdSignal)} (${a.isMacdBullish ? 'Bullish Cross' : 'Bearish Cross'})`;
   $('valEma20').textContent = fmt(d.ema20);
   $('valEma50').textContent = fmt(d.ema50);
   $('valEma200').textContent = fmt(d.ema200);
@@ -426,14 +444,14 @@ function render(d) {
   const notesEl = $('techNotes');
   notesEl.innerHTML = '';
   const notes = [
-    `Medium-Term Trend: Price is currently ${d.close >= d.ema200 ? 'above' : 'below'} the structural 200 EMA (${fmt(d.ema200)} EGP).`,
-    `MACD Alignment: ${a.macdBullish ? 'MACD Line is operating ABOVE Signal line (Positive Momentum).' : 'MACD Line is operating BELOW Signal line (Bearish Momentum).'}`,
-    `Volume Trigger Rule: Session volume is ${fmtMillions(d.volume)} (${a.rvol.toFixed(2)}x vs 20D MA of ${fmtMillions(d.avgVolume)}). ${a.volumeTriggerMet ? 'Breakout is backed by institutional buying volume.' : 'Requires a minimum 1.5x volume expansion to validate position entry.'}`
+    `Price Structure: Close is ${d.close >= d.ema200 ? 'ABOVE' : 'BELOW'} 200 EMA baseline (${fmt(d.ema200)} EGP) and ${a.isAboveShortTrend ? 'ABOVE' : 'BELOW'} 20 EMA short-term trend.`,
+    `Momentum Alignment: MACD is ${a.isMacdBullish ? 'BULLISH (Line > Signal)' : 'BEARISH (Line < Signal)'} and RSI is ${a.isRsiHealthy ? 'HEALTHY (50-70 zone)' : 'OUTSIDE optimal buy zone'}.`,
+    `Smart Multi-Factor Score: Achieved ${a.smartScore}/5 parameters. Trigger point validation requires price breakout above ${fmt(a.triggerPointPrice)} EGP supported by MACD and trend structure.`
   ];
   notes.forEach(n => { const li = document.createElement('li'); li.textContent = n; notesEl.appendChild(li); });
 
   $('outBuyZone').textContent = `${fmt(a.buyZoneLow)} - ${fmt(a.buyZoneHigh)}`;
-  $('outVolTrigger').textContent = `${fmtMillions(d.avgVolume * 1.5)}`;
+  $('outTriggerPoint').textContent = `${fmt(a.triggerPointPrice)} EGP`;
   $('outTarget').textContent = fmt(a.targetPrice);
   $('outStop').textContent = fmt(a.stopLoss);
   $('outRecTitle').textContent = a.recTitle;
@@ -441,9 +459,9 @@ function render(d) {
   const recNotesEl = $('recNotes');
   recNotesEl.innerHTML = '';
   const recNotes = [
-    `Ideal Entry Strategy: Accumulate within the Buy Zone (${fmt(a.buyZoneLow)} - ${fmt(a.buyZoneHigh)} EGP).`,
-    `Volume Entry Condition: Execute entry when session volume breaches the trigger threshold of ${fmtMillions(d.avgVolume * 1.5)}.`,
-    `Risk Control: Maintain medium-term structural Stop Loss at ${fmt(a.stopLoss)} EGP.`
+    `Trigger Activation: Confirmed entry upon a daily close exceeding ${fmt(a.triggerPointPrice)} EGP alongside MACD bullish continuation.`,
+    `Accumulation Zone: Primary buying zone defined between ${fmt(a.buyZoneLow)} - ${fmt(a.buyZoneHigh)} EGP.`,
+    `Risk Control: Maintain structural Stop Loss at ${fmt(a.stopLoss)} EGP.`
   ];
   recNotes.forEach(n => { const li = document.createElement('li'); li.textContent = n; recNotesEl.appendChild(li); });
 
@@ -462,6 +480,7 @@ function drawShareCanvas(d, a) {
   const mutedColor = '#848e9c';
   const greenColor = '#26a69a';
   const redColor = '#ef5350';
+  const accentColor = '#2962ff';
 
   ctx.fillStyle = bgColor; ctx.fillRect(0, 0, W, H);
 
@@ -498,7 +517,7 @@ function drawShareCanvas(d, a) {
   statBox(60, gy, gw, gh, 'Session Vol', fmtMillions(d.volume));
   statBox(60 + gw + 10, gy, gw, gh, '20D Avg Vol', fmtMillions(d.avgVolume));
   statBox(60 + 2 * (gw + 10), gy, gw, gh, 'Relative Vol', `${a.rvol.toFixed(2)}x`);
-  statBox(60 + 3 * (gw + 10), gy, gw, gh, 'Vol Trigger', a.volumeTriggerMet ? 'PASSED' : 'WAITING', a.volumeTriggerMet ? greenColor : '#ffb74d');
+  statBox(60 + 3 * (gw + 10), gy, gw, gh, 'Smart Score', `${a.smartScore}/5`, a.isFullTriggerConfirmed ? greenColor : '#ffb74d');
 
   let ly = 500;
   ctx.textAlign = 'left'; ctx.fillStyle = mutedColor; ctx.font = '700 26px Inter, sans-serif';
@@ -506,7 +525,7 @@ function drawShareCanvas(d, a) {
   ly += 40;
   const levels = [
     ['RSI (14-period)', `${fmt(d.rsi)} (${a.rsiStatus})`, textColor],
-    ['MACD Status', a.macdBullish ? 'Bullish (Above Signal)' : 'Bearish (Below Signal)', a.macdBullish ? greenColor : redColor],
+    ['MACD Status', a.isMacdBullish ? 'Bullish (Above Signal)' : 'Bearish (Below Signal)', a.isMacdBullish ? greenColor : redColor],
     ['EMA 20', fmt(d.ema20), textColor],
     ['EMA 50', fmt(d.ema50), textColor],
     ['EMA 200 (Long-Term Base)', fmt(d.ema200), textColor]
@@ -526,13 +545,14 @@ function drawShareCanvas(d, a) {
   ctx.fillText(a.recTitle, leftX + 20, ly + 45);
 
   const rgy = ly + 80;
-  const rgw = (W - 120 - 30) / 3;
-  statBox(60, rgy, rgw, 90, 'Ideal Buy Zone', `${fmt(a.buyZoneLow)} - ${fmt(a.buyZoneHigh)}`, greenColor);
-  statBox(60 + rgw + 15, rgy, rgw, 90, 'Medium Target', fmt(a.targetPrice), greenColor);
-  statBox(60 + 2 * (rgw + 15), rgy, rgw, 90, 'Stop Loss', fmt(a.stopLoss), redColor);
+  const rgw = (W - 120 - 30) / 4;
+  statBox(60, rgy, rgw, 90, 'Buy Zone', `${fmt(a.buyZoneLow)}-${fmt(a.buyZoneHigh)}`, greenColor);
+  statBox(60 + rgw + 10, rgy, rgw, 90, 'Trigger Point', `${fmt(a.triggerPointPrice)}`, accentColor);
+  statBox(60 + 2 * (rgw + 10), rgy, rgw, 90, 'Target', fmt(a.targetPrice), greenColor);
+  statBox(60 + 3 * (rgw + 10), rgy, rgw, 90, 'Stop Loss', fmt(a.stopLoss), redColor);
 
   ctx.textAlign = 'center'; ctx.fillStyle = mutedColor; ctx.font = '18px Inter, sans-serif';
-  ctx.fillText('Medium-Term Investment Strategy Engine', W / 2, H - 40);
+  ctx.fillText('Smart Multi-Factor Investment Strategy Engine', W / 2, H - 40);
 }
 
 function roundRect(ctx, x, y, w, h, r) {
