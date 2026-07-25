@@ -1,545 +1,372 @@
 <!DOCTYPE html>
-<html lang="en" dir="ltr" data-theme="dark">
+<html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Medium-Term Stock Investment Analyzer</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;800&display=swap" rel="stylesheet">
-<style>
-  :root[data-theme="dark"] {
-    --bg: #0b0e14;
-    --panel: #151922;
-    --panel-2: #1c2230;
-    --line: #2a3347;
-    --green: #26a69a;
-    --red: #ef5350;
-    --amber: #ffb74d;
-    --text: #f0f3f8;
-    --muted: #848e9c;
-    --accent: #2962ff;
-  }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EGX Technical Screener</title>
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --card-bg: #1e293b;
+            --accent-color: #38bdf8;
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --green: #22c55e;
+            --light-green: #15803d;
+            --red: #ef4444;
+            --light-red: #b91c1c;
+            --neutral: #eab308;
+            --border-color: #334155;
+        }
 
-  :root[data-theme="slate"] {
-    --bg: #1e293b;
-    --panel: #0f172a;
-    --panel-2: #1e293b;
-    --line: #334155;
-    --green: #10b981;
-    --red: #f43f5e;
-    --amber: #f59e0b;
-    --text: #f8fafc;
-    --muted: #94a3b8;
-    --accent: #3b82f6;
-  }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-primary);
+            margin: 0;
+            padding: 20px;
+        }
 
-  * { box-sizing: border-box; }
-  body {
-    margin: 0;
-    background: var(--bg);
-    color: var(--text);
-    font-family: 'Inter', sans-serif;
-    padding: 20px;
-  }
-  .wrap { max-width: 850px; margin: 0 auto; }
-  
-  .header {
-    display: flex; justify-content: space-between; align-items: center;
-    margin-bottom: 20px; flex-wrap: wrap; gap: 10px;
-  }
-  .header h1 { margin: 0; font-size: 22px; font-weight: 800; }
-  .theme-switch {
-    display: flex; gap: 8px; background: var(--panel); padding: 4px; border-radius: 10px; border: 1px solid var(--line);
-  }
-  .theme-btn {
-    background: transparent; border: none; color: var(--muted); padding: 6px 12px;
-    border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 700;
-  }
-  .theme-btn.active { background: var(--accent); color: #fff; }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
 
-  .toolbar {
-    display: flex; flex-wrap: wrap; gap: 10px; align-items: center;
-    background: var(--panel); border: 1px solid var(--line); border-radius: 16px;
-    padding: 16px; margin-bottom: 16px;
-  }
-  .toolbar input {
-    background: var(--panel-2); border: 1px solid var(--line); color: var(--text);
-    border-radius: 10px; padding: 12px 16px; font-size: 16px; flex: 1; min-width: 160px; outline: none;
-  }
-  .toolbar button {
-    background: var(--accent); color: #ffffff; border: none; border-radius: 10px;
-    padding: 12px 22px; font-weight: 800; font-size: 15px; cursor: pointer;
-  }
-  .toolbar button.secondary { background: transparent; color: var(--text); border: 1px solid var(--line); }
-  .status { font-size: 13.5px; color: var(--muted); width: 100%; margin-top: 4px; }
-  .status.err { color: var(--red); }
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
 
-  .card {
-    background: var(--panel); border: 1px solid var(--line); border-radius: 16px;
-    padding: 20px; margin-bottom: 16px;
-  }
-  .card h2 { margin: 0 0 16px; font-size: 17px; color: var(--muted); font-weight: 700; }
-  .head-row { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; flex-wrap: wrap; }
-  .title-block .ticker { color: var(--green); font-size: 34px; font-weight: 800; }
-  .date-box { background: var(--panel-2); border: 1px solid var(--line); border-radius: 10px; padding: 8px 14px; font-size: 13px; color: var(--muted); }
-  
-  .price-row { display: flex; gap: 20px; align-items: baseline; margin-top: 8px; flex-wrap: wrap; }
-  .price-row .last { font-size: 42px; font-weight: 800; }
-  .price-row .chg { font-size: 22px; font-weight: 700; }
-  .up { color: var(--green); }
-  .down { color: var(--red); }
+        h1 {
+            color: var(--accent-color);
+            margin-bottom: 5px;
+        }
 
-  .grid4 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
-  @media(min-width: 540px){ .grid4 { grid-template-columns: repeat(4, 1fr); } }
-  .stat { background: var(--panel-2); border: 1px solid var(--line); border-radius: 12px; padding: 12px; text-align: center; }
-  .stat .lbl { font-size: 12.5px; color: var(--muted); margin-bottom: 6px; }
-  .stat .val { font-size: 17px; font-weight: 800; }
+        .controls {
+            background-color: var(--card-bg);
+            padding: 20px;
+            border-radius: 12px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+            border: 1px solid var(--border-color);
+        }
 
-  .levels { width: 100%; border-collapse: collapse; font-size: 15px; }
-  .levels td { padding: 10px 6px; border-bottom: 1px solid var(--line); }
-  .levels tr:last-child td { border-bottom: none; }
-  .levels td:first-child { color: var(--muted); }
-  .levels td:last-child { text-align: right; font-weight: 800; }
+        .input-group {
+            display: flex;
+            flex-direction: column;
+        }
 
-  .notes li { margin-bottom: 10px; line-height: 1.7; font-size: 15px; color: var(--text); }
-  
-  .badge {
-    display: inline-flex; align-items: center; gap: 6px; background: var(--panel-2);
-    border: 1px solid var(--line); border-radius: 999px; padding: 6px 16px; font-size: 14px; font-weight: 700;
-  }
-  .manual-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: 12px; }
-  .manual-grid label { font-size: 12px; color: var(--muted); display: block; margin-bottom: 4px; }
-  .manual-grid input { width: 100%; background: var(--panel-2); border: 1px solid var(--line); color: var(--text); border-radius: 8px; padding: 10px; }
-  
-  .hidden { display: none !important; }
-  .strategy-box {
-    background: var(--panel-2); border-left: 4px solid var(--accent); padding: 14px 18px; border-radius: 8px; margin-bottom: 14px; font-size: 14.5px; line-height: 1.7;
-  }
-  #shareCanvas { width: 100%; border-radius: 12px; border: 1px solid var(--line); display: block; margin-top: 10px; }
-</style>
+        label {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            margin-bottom: 5px;
+        }
+
+        input {
+            background-color: var(--bg-color);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            padding: 10px;
+            border-radius: 6px;
+            outline: none;
+        }
+
+        input:focus {
+            border-color: var(--accent-color);
+        }
+
+        button {
+            grid-column: 1 / -1;
+            background-color: var(--accent-color);
+            color: #000;
+            font-weight: bold;
+            padding: 12px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+
+        button:hover {
+            opacity: 0.9;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 20px;
+        }
+
+        .card {
+            background-color: var(--card-bg);
+            border-radius: 12px;
+            padding: 20px;
+            border: 1px solid var(--border-color);
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 10px;
+        }
+
+        .symbol {
+            font-size: 1.3rem;
+            font-weight: bold;
+            color: var(--accent-color);
+        }
+
+        .price {
+            font-size: 1.2rem;
+            font-weight: bold;
+        }
+
+        /* Signal Recommendation Badges */
+        .badge {
+            font-size: 0.75rem;
+            font-weight: 800;
+            padding: 4px 8px;
+            border-radius: 4px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            display: inline-block;
+        }
+        .badge-strong-buy { background-color: var(--green); color: #000; }
+        .badge-buy { background-color: var(--light-green); color: #fff; }
+        .badge-neutral { background-color: var(--neutral); color: #000; }
+        .badge-sell { background-color: var(--light-red); color: #fff; }
+        .badge-strong-sell { background-color: var(--red); color: #fff; }
+
+        .metric-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.9rem;
+        }
+
+        .metric-label {
+            color: var(--text-secondary);
+        }
+
+        .metric-value {
+            font-weight: bold;
+        }
+
+        .status {
+            text-align: center;
+            grid-column: 1 / -1;
+            font-size: 1.2rem;
+            color: var(--text-secondary);
+            margin-top: 40px;
+        }
+    </style>
 </head>
 <body>
-<div class="wrap">
 
-  <div class="header">
-    <h1>📈 Medium-Term Investment Analyzer</h1>
-    <div class="theme-switch">
-      <button class="theme-btn active" onclick="setTheme('dark', event)">Dark (Neon)</button>
-      <button class="theme-btn" onclick="setTheme('slate', event)">Modern Slate</button>
-    </div>
-  </div>
+<div class="container">
+    <header>
+        <h1>EGX Technical Screener</h1>
+        <p style="color: var(--text-secondary);">Filter Egyptian Stocks by Technical Indicators</p>
+    </header>
 
-  <div class="toolbar">
-    <input id="tickerInput" placeholder="Ticker (e.g. ORAS, ETEL, COMI)" value="ORAS">
-    <button id="fetchBtn">🔍 Analyze via TradingView</button>
-    <button id="manualBtn" class="secondary">✍️ Manual Entry</button>
-    <div id="status" class="status">Enter ticker symbol to run medium-term trend & volume analysis.</div>
-  </div>
-
-  <!-- Manual Entry Panel -->
-  <div id="manualPanel" class="card hidden">
-    <h2>✍️ Manual Data Entry (Medium-Term Parameters)</h2>
-    <div class="manual-grid">
-      <div><label>Current Price</label><input id="m_close" type="number" step="0.01"></div>
-      <div><label>Previous Close</label><input id="m_prev" type="number" step="0.01"></div>
-      <div><label>Current Session Volume</label><input id="m_vol" type="number" step="1"></div>
-      <div><label>20-Day Avg Volume</label><input id="m_avgvol" type="number" step="1"></div>
-      <div><label>EMA 20</label><input id="m_ema20" type="number" step="0.01"></div>
-      <div><label>EMA 50</label><input id="m_ema50" type="number" step="0.01"></div>
-      <div><label>EMA 200</label><input id="m_ema200" type="number" step="0.01"></div>
-      <div><label>RSI (14)</label><input id="m_rsi" type="number" step="0.1"></div>
-      <div><label>MACD Line</label><input id="m_macd" type="number" step="0.01"></div>
-      <div><label>MACD Signal Line</label><input id="m_macdsig" type="number" step="0.01"></div>
-    </div>
-    <button id="applyManual" style="margin-top:14px; width:100%; background:var(--green); color:#fff; border:none; border-radius:10px; padding:12px; font-weight:800; cursor:pointer;">Generate Investment Analysis</button>
-  </div>
-
-  <!-- Main Analysis Section -->
-  <div id="report" class="hidden">
-
-    <div class="card">
-      <div class="head-row">
-        <div class="title-block">
-          <div class="ticker" id="outTicker">--</div>
-          <div style="color:var(--muted); font-size:15px; margin-top:2px;" id="outName">—</div>
+    <div class="controls">
+        <div class="input-group">
+            <label for="rsiMin">Min RSI (14)</label>
+            <input type="number" id="rsiMin" value="30">
         </div>
-        <div class="date-box" id="outDate">—</div>
-      </div>
-      <div class="price-row">
-        <div class="last" id="outLast">--</div>
-        <div class="chg" id="outChg">--</div>
-      </div>
-      <div class="grid4" style="margin-top:20px;">
-        <div class="stat"><div class="lbl">Session Vol</div><div class="val" id="outVol">--</div></div>
-        <div class="stat"><div class="lbl">20D Avg Vol</div><div class="val" id="outAvgVol">--</div></div>
-        <div class="stat"><div class="lbl">Relative Vol (RVOL)</div><div class="val" id="outRvol">--</div></div>
-        <div class="stat"><div class="lbl">Volume Trigger</div><div class="val" id="outVolStatus">--</div></div>
-      </div>
+        <div class="input-group">
+            <label for="rsiMax">Max RSI (14)</label>
+            <input type="number" id="rsiMax" value="70">
+        </div>
+        <div class="input-group">
+            <label for="minVolume">Min Traded Value (in Millions EGP)</label>
+            <input type="number" id="minVolume" placeholder="e.g. 5 for 5M EGP" value="1">
+        </div>
+        <button onclick="applyFilters()">Scan Market</button>
     </div>
 
-    <!-- Technical Indicators Panel -->
-    <div class="card">
-      <h2>⚙️ Medium-Term Technical Indicators</h2>
-      <table class="levels">
-        <tr><td>RSI (14-period)</td><td id="valRsi">--</td></tr>
-        <tr><td>MACD (12, 26, 9)</td><td id="valMacd">--</td></tr>
-        <tr><td>EMA 20 (Short Trend)</td><td id="valEma20">--</td></tr>
-        <tr><td>EMA 50 (Medium Trend)</td><td id="valEma50">--</td></tr>
-        <tr><td>EMA 200 (Long Structural Base)</td><td id="valEma200">--</td></tr>
-      </table>
-    </div>
-
-    <div class="card">
-      <h2>📊 Market Structure & Trend Alignment</h2>
-      <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px;">
-        <span class="badge" id="trendBadge">--</span>
-        <span class="badge" id="rsiBadge">--</span>
-      </div>
-      <ul class="notes" id="techNotes" style="margin-top:14px;"></ul>
-    </div>
-
-    <!-- Medium-Term Investment Plan -->
-    <div class="card">
-      <h2>🎯 Medium-Term Entry & Position Parameters</h2>
-      <div class="grid4">
-        <div class="stat"><div class="lbl">Ideal Buy Zone</div><div class="val" id="outBuyZone" style="color:var(--green)">--</div></div>
-        <div class="stat"><div class="lbl">Volume Confirmation</div><div class="val" id="outVolTrigger">--</div></div>
-        <div class="stat"><div class="lbl">Medium Target</div><div class="val" id="outTarget" style="color:var(--green)">--</div></div>
-        <div class="stat"><div class="lbl">Structural Stop Loss</div><div class="val" id="outStop" style="color:var(--red)">--</div></div>
-      </div>
-      <div style="margin-top:16px; font-size:16.5px; font-weight:800;" id="outRecTitle">--</div>
-      <ul class="notes" id="recNotes" style="margin-top:8px;"></ul>
-    </div>
-
-    <div class="card">
-      <h2>🖼️ Exportable Investment Card</h2>
-      <canvas id="shareCanvas" width="1080" height="1450"></canvas>
-      <button id="downloadBtn" style="margin-top:14px; width:100%; background:var(--green); color:#fff; border:none; border-radius:10px; padding:14px; font-size:16px; font-weight:800; cursor:pointer;">⬇️ Download Report Image</button>
-    </div>
-
-  </div>
-
+    <div id="resultsGrid" class="grid"></div>
+    <div id="statusMessage" class="status">Click "Scan Market" to pull technical data...</div>
 </div>
 
 <script>
-let currentData = null;
+    // Global variable to store raw fetched stocks
+    let fetchedStocks = [];
 
-const $ = id => document.getElementById(id);
-const fmt = n => (n === null || n === undefined || isNaN(n) || !isFinite(n)) ? '--' : n.toFixed(2);
+    async function fetchTradingViewData() {
+        const status = document.getElementById("statusMessage");
+        status.innerText = "Connecting to market via Cloudflare proxy...";
 
-function setTheme(theme, e) {
-  document.documentElement.setAttribute('data-theme', theme);
-  document.querySelectorAll('.theme-btn').forEach(btn => btn.classList.remove('active'));
-  if (e && e.target) e.target.classList.add('active');
-  if (currentData) render(currentData);
-}
+        const tvUrl = "https://scanner.tradingview.com/egypt/scan";
+        
+        // =================================================================
+        // REPLACE WITH YOUR REAL CLOUDFLARE WORKER URL:
+        const workerProxy = "https://my-stock-proxy.amr7-elsherif.workers.dev"; 
+        // =================================================================
 
-function setStatus(msg, isErr) {
-  const el = $('status');
-  el.textContent = msg;
-  el.className = 'status' + (isErr ? ' err' : '');
-}
+        const proxyEndpoint = `${workerProxy}/?url=${encodeURIComponent(tvUrl)}`;
 
-$('tickerInput').addEventListener('keypress', (e) => { if (e.key === 'Enter') runAnalysis(); });
-$('fetchBtn').addEventListener('click', runAnalysis);
+        const payload = {
+            filter: [],
+            options: { lang: "en" },
+            symbols: { query: { types: [] }, tickers: [] },
+            columns: [
+                "name",
+                "close",
+                "change",
+                "RSI",
+                "Value.Traded",
+                "average_volume_10d_calc",
+                "average_volume_30d_calc",
+                "Recommend.All",
+                "description"
+            ],
+            sort: { sortBy: "Value.Traded", sortOrder: "desc" },
+            range: [0, 150]
+        };
 
-// Fetch Data via Cloudflare Worker Proxy
-async function fetchTradingViewData(ticker) {
-  const cleanSymbol = ticker.trim().toUpperCase().replace('.CA', '');
-  const tvUrl = "https://scanner.tradingview.com/egypt/scan";
-  
-  // REPLACE WITH YOUR CLOUDFLARE WORKER URL:
-  const workerProxy = "https://my-stock-proxy.amr7-elsherif.workers.dev"; 
-  const proxyEndpoint = `${workerProxy}/?url=${encodeURIComponent(tvUrl)}`;
+        try {
+            const response = await fetch(proxyEndpoint, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload)
+            });
 
-  const payload = {
-    "symbols": { "tickers": [`EGX:${cleanSymbol}`] },
-    "columns": [
-      "name", "description", "close", "change_abs", "volume", "average_volume_20d",
-      "EMA20", "EMA50", "EMA200", "RSI", "MACD.macd", "MACD.signal"
-    ]
-  };
+            if (!response.ok) throw new Error(`HTTP Error: ${response.status}`);
 
-  const response = await fetch(proxyEndpoint, {
-    method: "POST",
-    headers: { "Content-Type": "text/plain" },
-    body: JSON.stringify(payload)
-  });
+            const json = await response.json();
+            
+            // Map raw rows into clean JS Objects
+            fetchedStocks = json.data.map(item => {
+                const d = item.d;
+                
+                // Estimate 20D Avg Vol by averaging 10D and 30D indicators
+                const avgVol10 = d[5] || 0;
+                const avgVol30 = d[6] || 0;
+                const avgVol20 = (avgVol10 + avgVol30) / 2;
 
-  if (!response.ok) throw new Error(`Worker returned status ${response.status}`);
-  const data = await response.json();
-  
-  if (data && data.data && data.data.length > 0) {
-    const d = data.data[0].d;
-    const close = d[2];
-    const changeAbs = d[3];
-    return {
-      ticker: `${cleanSymbol}.CA`,
-      name: d[1] || cleanSymbol,
-      close: close,
-      prevClose: close - changeAbs,
-      volume: d[4] || 0,
-      avgVolume: d[5] || 0,
-      ema20: d[6] || close,
-      ema50: d[7] || close,
-      ema200: d[8] || close,
-      rsi: d[9] || 50,
-      macd: d[10] || 0,
-      macdSignal: d[11] || 0
-    };
-  } else {
-    throw new Error("No market data returned for " + cleanSymbol);
-  }
-}
+                return {
+                    symbol: item.s.replace("EGX:", ""),
+                    name: d[8] || d[0],
+                    close: d[1],
+                    change: d[2],
+                    rsi: d[3],
+                    tradedValue: d[4] || 0,
+                    avgVol20: avgVol20,
+                    recommendation: d[7] || 0
+                };
+            });
 
-async function runAnalysis() {
-  const ticker = $('tickerInput').value.trim().toUpperCase();
-  if (!ticker) { setStatus('Please enter a valid ticker symbol.', true); return; }
+            applyFilters();
+        } catch (err) {
+            console.error("Fetch Error:", err);
+            status.innerText = "Error fetching market data. Ensure your Cloudflare Worker URL is correctly set.";
+        }
+    }
 
-  setStatus('⏳ Fetching medium-term indicators & volume metrics from TradingView...');
-  try {
-    const built = await fetchTradingViewData(ticker);
-    currentData = built;
-    render(built);
-    setStatus('✅ Live TradingView medium-term analysis loaded successfully');
-    $('manualPanel').classList.add('hidden');
-  } catch (err) {
-    console.error(err);
-    setStatus(`⚠️ Fetch failed. Verify Cloudflare Worker URL or enter parameters manually.`, true);
-    $('manualPanel').classList.remove('hidden');
-  }
-}
+    function getRecommendationBadge(score) {
+        // TradingView Recommend.All ranges from -1.0 to +1.0
+        if (score >= 0.5) return `<span class="badge badge-strong-buy">Strong Buy</span>`;
+        if (score >= 0.1) return `<span class="badge badge-buy">Buy</span>`;
+        if (score > -0.1) return `<span class="badge badge-neutral">Neutral</span>`;
+        if (score > -0.5) return `<span class="badge badge-sell">Sell</span>`;
+        return `<span class="badge badge-strong-sell">Strong Sell</span>`;
+    }
 
-$('manualBtn').addEventListener('click', () => $('manualPanel').classList.toggle('hidden'));
+    function formatNumber(num) {
+        if (num >= 1e6) return (num / 1e6).toFixed(2) + "M";
+        if (num >= 1e3) return (num / 1e3).toFixed(1) + "K";
+        return num ? num.toFixed(0) : "0";
+    }
 
-$('applyManual').addEventListener('click', () => {
-  const ticker = $('tickerInput').value.trim().toUpperCase() || 'STOCK';
-  const c = parseFloat($('m_close').value);
-  const p = parseFloat($('m_prev').value) || c;
-  const v = parseFloat($('m_vol').value) || 0;
-  const avgV = parseFloat($('m_avgvol').value) || 1;
-  const e20 = parseFloat($('m_ema20').value) || c;
-  const e50 = parseFloat($('m_ema50').value) || c;
-  const e200 = parseFloat($('m_ema200').value) || c;
-  const rsi = parseFloat($('m_rsi').value) || 50;
-  const macd = parseFloat($('m_macd').value) || 0;
-  const macdSig = parseFloat($('m_macdsig').value) || 0;
+    function applyFilters() {
+        const grid = document.getElementById("resultsGrid");
+        const status = document.getElementById("statusMessage");
 
-  if (isNaN(c)) { setStatus('Please input valid numeric values for price.', true); return; }
+        if (fetchedStocks.length === 0) {
+            fetchTradingViewData();
+            return;
+        }
 
-  const built = {
-    ticker: ticker.endsWith('.CA') ? ticker : `${ticker}.CA`,
-    name: ticker, close: c, prevClose: p, volume: v, avgVolume: avgV,
-    ema20: e20, ema50: e50, ema200: e200, rsi: rsi, macd: macd, macdSignal: macdSig
-  };
-  currentData = built;
-  render(built);
-  setStatus('✅ Report calculated using manual inputs.');
-});
+        grid.innerHTML = "";
 
-function computeAnalysis(d) {
-  const { close, prevClose, volume, avgVolume, ema20, ema50, ema200, rsi, macd, macdSignal } = d;
+        const rsiMin = parseFloat(document.getElementById("rsiMin").value) || 0;
+        const rsiMax = parseFloat(document.getElementById("rsiMax").value) || 100;
+        
+        // Input parsed in Millions EGP (e.g., input 1 = 1,000,000)
+        const minVolInput = parseFloat(document.getElementById("minVolume").value) || 0;
+        const minTradedValue = minVolInput * 1000000;
 
-  const pct = prevClose ? ((close - prevClose) / prevClose * 100) : 0;
-  const rvol = avgVolume > 0 ? (volume / avgVolume) : 1;
-  const volumeTriggerMet = rvol >= 1.5;
+        const filtered = fetchedStocks.filter(stock => {
+            const matchesRsi = stock.rsi >= rsiMin && stock.rsi <= rsiMax;
+            const matchesVol = stock.tradedValue >= minTradedValue;
+            return matchesRsi && matchesVol;
+        });
 
-  const aboveEma200 = close >= ema200;
-  const goldenCross = ema50 >= ema200;
-  const macdBullish = macd > macdSignal;
+        if (filtered.length === 0) {
+            status.style.display = "block";
+            status.innerText = "No stocks matched your filter criteria.";
+            return;
+        }
 
-  // Medium-Term Entry Zone (Between EMA20 and EMA50 or pullback support)
-  const buyZoneLow = Math.min(ema20, ema50);
-  const buyZoneHigh = Math.max(ema20, close);
+        status.style.display = "none";
 
-  const stopLoss = Math.min(ema50, ema200) * 0.95; // 5% below key structural EMA
-  const targetPrice = close * (aboveEma200 ? 1.25 : 1.15); // 15-25% medium-term target horizon
+        filtered.forEach(stock => {
+            const card = document.createElement("div");
+            card.className = "card";
 
-  let trendStatus = 'Neutral / Consolidation';
-  if (aboveEma200 && goldenCross) trendStatus = '🚀 Strong Bullish Structural Uptrend';
-  else if (aboveEma200) trendStatus = '📈 Bullish Medium-Term Bias';
-  else trendStatus = '📉 Bearish Structural Bias (Below EMA 200)';
+            const changeColor = stock.change >= 0 ? "var(--green)" : "var(--red)";
+            const changeSign = stock.change >= 0 ? "+" : "";
 
-  let rsiStatus = 'Neutral';
-  if (rsi >= 70) rsiStatus = '🔥 Overbought (>70)';
-  else if (rsi <= 30) rsiStatus = '🟢 Oversold (<30)';
-  else if (rsi >= 55) rsiStatus = '📈 Bullish Momentum';
+            card.innerHTML = `
+                <div class="card-header">
+                    <div>
+                        <div class="symbol">${stock.symbol}</div>
+                        <div style="font-size: 0.75rem; color: var(--text-secondary);">${stock.name}</div>
+                    </div>
+                    <div style="text-align: right;">
+                        <div class="price">${stock.close ? stock.close.toFixed(2) : "N/A"} EGP</div>
+                        <div style="font-size: 0.85rem; color: ${changeColor}; font-weight: bold;">
+                            ${changeSign}${stock.change ? stock.change.toFixed(2) : "0.00"}%
+                        </div>
+                    </div>
+                </div>
 
-  let recTitle = 'Hold / Await Volume Confirmation';
-  if (aboveEma200 && macdBullish && volumeTriggerMet) {
-    recTitle = '🟢 STRONG BUY: Volume Breakout Confirmed';
-  } else if (aboveEma200 && rvol < 1.0) {
-    recTitle = '⏳ ACCUMULATE ON PULLBACK: Volume Below Trigger';
-  } else if (!aboveEma200) {
-    recTitle = '⚠️ AVOID / REDUCE: Price Below 200 EMA';
-  }
+                <div class="metric-row">
+                    <span class="metric-label">Signal Recommendation:</span>
+                    <span>${getRecommendationBadge(stock.recommendation)}</span>
+                </div>
 
-  return { pct, rvol, volumeTriggerMet, trendStatus, rsiStatus, buyZoneLow, buyZoneHigh, stopLoss, targetPrice, macdBullish, recTitle };
-}
+                <div class="metric-row">
+                    <span class="metric-label">RSI (14):</span>
+                    <span class="metric-value">${stock.rsi ? stock.rsi.toFixed(2) : "N/A"}</span>
+                </div>
 
-function render(d) {
-  $('report').classList.remove('hidden');
-  const a = computeAnalysis(d);
+                <div class="metric-row">
+                    <span class="metric-label">Traded Value (Today):</span>
+                    <span class="metric-value">${formatNumber(stock.tradedValue)} EGP</span>
+                </div>
 
-  $('outTicker').textContent = d.ticker;
-  $('outName').textContent = d.name;
-  $('outDate').textContent = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+                <div class="metric-row">
+                    <span class="metric-label">Est. 20D Avg Vol:</span>
+                    <span class="metric-value">${formatNumber(stock.avgVol20)} shares</span>
+                </div>
+            `;
 
-  $('outLast').textContent = fmt(d.close);
-  const chgVal = d.close - d.prevClose;
-  const chgEl = $('outChg');
-  chgEl.textContent = (chgVal >= 0 ? '+' : '') + fmt(chgVal) + ' (' + (a.pct >= 0 ? '+' : '') + a.pct.toFixed(2) + '%)';
-  chgEl.className = 'chg ' + (chgVal >= 0 ? 'up' : 'down');
+            grid.appendChild(card);
+        });
+    }
 
-  $('outVol').textContent = d.volume ? Number(d.volume).toLocaleString('en-US') : '--';
-  $('outAvgVol').textContent = d.avgVolume ? Number(d.avgVolume).toLocaleString('en-US') : '--';
-  $('outRvol').textContent = `${a.rvol.toFixed(2)}x`;
-  
-  const vStat = $('outVolStatus');
-  vStat.textContent = a.volumeTriggerMet ? '🔥 CONFIRMED (>1.5x)' : '⏳ LOW (Waiting Trigger)';
-  vStat.style.color = a.volumeTriggerMet ? 'var(--green)' : 'var(--amber)';
-
-  $('valRsi').textContent = `${fmt(d.rsi)} (${a.rsiStatus})`;
-  $('valMacd').textContent = `${fmt(d.macd)} / Signal: ${fmt(d.macdSignal)} (${a.macdBullish ? 'Bullish Cross' : 'Bearish Cross'})`;
-  $('valEma20').textContent = fmt(d.ema20);
-  $('valEma50').textContent = fmt(d.ema50);
-  $('valEma200').textContent = fmt(d.ema200);
-
-  $('trendBadge').textContent = a.trendStatus;
-  $('rsiBadge').textContent = `RSI: ${fmt(d.rsi)}`;
-
-  const notesEl = $('techNotes');
-  notesEl.innerHTML = '';
-  const notes = [
-    `Medium-Term Trend: Price is currently ${d.close >= d.ema200 ? 'above' : 'below'} the structural 200 EMA (${fmt(d.ema200)} EGP).`,
-    `MACD Alignment: ${a.macdBullish ? 'MACD Line is operating ABOVE Signal line (Positive Momentum).' : 'MACD Line is operating BELOW Signal line (Bearish Momentum).'}`,
-    `Volume Trigger Rule: Session volume is ${a.rvol.toFixed(2)}x relative to its 20-day average. ${a.volumeTriggerMet ? 'Breakout is backed by institutional buying volume.' : 'Requires a minimum 1.5x volume expansion to validate position entry.'}`
-  ];
-  notes.forEach(n => { const li = document.createElement('li'); li.textContent = n; notesEl.appendChild(li); });
-
-  $('outBuyZone').textContent = `${fmt(a.buyZoneLow)} - ${fmt(a.buyZoneHigh)}`;
-  $('outVolTrigger').textContent = `${Number(d.avgVolume * 1.5).toLocaleString('en-US')} shares`;
-  $('outTarget').textContent = fmt(a.targetPrice);
-  $('outStop').textContent = fmt(a.stopLoss);
-  $('outRecTitle').textContent = a.recTitle;
-
-  const recNotesEl = $('recNotes');
-  recNotesEl.innerHTML = '';
-  const recNotes = [
-    `Ideal Entry Strategy: Accumulate within the Buy Zone (${fmt(a.buyZoneLow)} - ${fmt(a.buyZoneHigh)} EGP).`,
-    `Volume Entry Condition: Execute entry when volume breaches the trigger threshold of ${Number(d.avgVolume * 1.5).toLocaleString('en-US')} shares.`,
-    `Risk Control: Maintain medium-term structural Stop Loss at ${fmt(a.stopLoss)} EGP.`
-  ];
-  recNotes.forEach(n => { const li = document.createElement('li'); li.textContent = n; recNotesEl.appendChild(li); });
-
-  drawShareCanvas(d, a);
-}
-
-function drawShareCanvas(d, a) {
-  const cv = $('shareCanvas');
-  const ctx = cv.getContext('2d');
-  const W = cv.width, H = cv.height;
-
-  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-  const bgColor = isDark ? '#151922' : '#0f172a';
-  const panelColor = isDark ? '#1c2230' : '#1e293b';
-  const textColor = '#f0f3f8';
-  const mutedColor = '#848e9c';
-  const greenColor = '#26a69a';
-  const redColor = '#ef5350';
-
-  ctx.fillStyle = bgColor; ctx.fillRect(0, 0, W, H);
-
-  const leftX = 60;
-  ctx.textAlign = 'left';
-  ctx.fillStyle = mutedColor; ctx.font = '28px Inter, sans-serif';
-  ctx.fillText('Medium-Term Investment Report', leftX, 80);
-  ctx.fillStyle = greenColor; ctx.font = '800 60px Inter, sans-serif';
-  ctx.fillText(d.ticker, leftX, 150);
-  ctx.fillStyle = textColor; ctx.font = '26px Inter, sans-serif';
-  ctx.fillText(d.name || '', leftX, 190);
-
-  ctx.textAlign = 'right';
-  ctx.fillStyle = mutedColor; ctx.font = '22px Inter, sans-serif';
-  ctx.fillText(new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }), W - 60, 80);
-
-  const chgVal = d.close - d.prevClose;
-  ctx.textAlign = 'left';
-  ctx.fillStyle = textColor; ctx.font = '800 58px Inter, sans-serif';
-  ctx.fillText(fmt(d.close) + ' EGP', leftX, 260);
-  ctx.fillStyle = chgVal >= 0 ? greenColor : redColor; ctx.font = '700 28px Inter, sans-serif';
-  ctx.fillText((chgVal >= 0 ? '+' : '') + fmt(chgVal) + ' (' + (a.pct >= 0 ? '+' : '') + a.pct.toFixed(2) + '%)', leftX, 305);
-
-  function statBox(x, y, w, h, label, val, color) {
-    ctx.fillStyle = panelColor; roundRect(ctx, x, y, w, h, 12); ctx.fill();
-    ctx.textAlign = 'center';
-    ctx.fillStyle = mutedColor; ctx.font = '20px Inter, sans-serif';
-    ctx.fillText(label, x + w / 2, y + 34);
-    ctx.fillStyle = color || textColor; ctx.font = '800 24px Inter, sans-serif';
-    ctx.fillText(val, x + w / 2, y + 70);
-  }
-
-  const gy = 350, gw = (W - 120 - 30) / 4, gh = 90;
-  statBox(60, gy, gw, gh, 'Session Vol', d.volume ? Number(d.volume).toLocaleString() : '--');
-  statBox(60 + gw + 10, gy, gw, gh, '20D Avg Vol', d.avgVolume ? Number(d.avgVolume).toLocaleString() : '--');
-  statBox(60 + 2 * (gw + 10), gy, gw, gh, 'Relative Vol', `${a.rvol.toFixed(2)}x`);
-  statBox(60 + 3 * (gw + 10), gy, gw, gh, 'Vol Trigger', a.volumeTriggerMet ? 'PASSED' : 'WAITING', a.volumeTriggerMet ? greenColor : '#ffb74d');
-
-  let ly = 500;
-  ctx.textAlign = 'left'; ctx.fillStyle = mutedColor; ctx.font = '700 26px Inter, sans-serif';
-  ctx.fillText('Medium-Term Indicators', leftX, ly);
-  ly += 40;
-  const levels = [
-    ['RSI (14-period)', `${fmt(d.rsi)} (${a.rsiStatus})`, textColor],
-    ['MACD Status', a.macdBullish ? 'Bullish (Above Signal)' : 'Bearish (Below Signal)', a.macdBullish ? greenColor : redColor],
-    ['EMA 20', fmt(d.ema20), textColor],
-    ['EMA 50', fmt(d.ema50), textColor],
-    ['EMA 200 (Long-Term Base)', fmt(d.ema200), textColor]
-  ];
-  levels.forEach(([lbl, val, col]) => {
-    ctx.fillStyle = panelColor; roundRect(ctx, 60, ly - 32, W - 120, 50, 10); ctx.fill();
-    ctx.textAlign = 'left'; ctx.fillStyle = textColor; ctx.font = '24px Inter, sans-serif';
-    ctx.fillText(lbl, leftX + 20, ly);
-    ctx.textAlign = 'right'; ctx.fillStyle = col; ctx.font = '800 24px Inter, sans-serif';
-    ctx.fillText(val, W - 80, ly);
-    ly += 60;
-  });
-
-  ly += 20;
-  ctx.fillStyle = panelColor; roundRect(ctx, 60, ly, W - 120, 210, 14); ctx.fill();
-  ctx.textAlign = 'left'; ctx.fillStyle = greenColor; ctx.font = '800 26px Inter, sans-serif';
-  ctx.fillText(a.recTitle, leftX + 20, ly + 45);
-
-  const rgy = ly + 80;
-  const rgw = (W - 120 - 30) / 3;
-  statBox(60, rgy, rgw, 90, 'Ideal Buy Zone', `${fmt(a.buyZoneLow)} - ${fmt(a.buyZoneHigh)}`, greenColor);
-  statBox(60 + rgw + 15, rgy, rgw, 90, 'Medium Target', fmt(a.targetPrice), greenColor);
-  statBox(60 + 2 * (rgw + 15), rgy, rgw, 90, 'Stop Loss', fmt(a.stopLoss), redColor);
-
-  ctx.textAlign = 'center'; ctx.fillStyle = mutedColor; ctx.font = '18px Inter, sans-serif';
-  ctx.fillText('Medium-Term Investment Strategy Engine', W / 2, H - 40);
-}
-
-function roundRect(ctx, x, y, w, h, r) {
-  ctx.beginPath();
-  ctx.moveTo(x + r, y);
-  ctx.arcTo(x + w, y, x + w, y + h, r);
-  ctx.arcTo(x + w, y + h, x, y + h, r);
-  ctx.arcTo(x, y + h, x, y, r);
-  ctx.arcTo(x, y + h, x, y, r);
-  ctx.arcTo(x, y, x + w, y, r);
-  ctx.closePath();
-}
-
-$('downloadBtn').addEventListener('click', () => {
-  const cv = $('shareCanvas');
-  const link = document.createElement('a');
-  link.download = (currentData?.ticker || 'stock') + '-investment-report.png';
-  link.href = cv.toDataURL('image/png');
-  link.click();
-});
-
-window.addEventListener('load', runAnalysis);
+    // Auto-run on load
+    window.onload = fetchTradingViewData;
 </script>
+
 </body>
 </html>
