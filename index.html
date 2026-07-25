@@ -12,10 +12,7 @@
             --text-primary: #f8fafc;
             --text-secondary: #94a3b8;
             --green: #22c55e;
-            --light-green: #15803d;
             --red: #ef4444;
-            --light-red: #b91c1c;
-            --neutral: #eab308;
             --border-color: #334155;
         }
 
@@ -95,7 +92,7 @@
 
         .grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
             gap: 20px;
         }
 
@@ -104,10 +101,9 @@
             border-radius: 12px;
             padding: 20px;
             border: 1px solid var(--border-color);
-            position: relative;
             display: flex;
             flex-direction: column;
-            gap: 12px;
+            gap: 10px;
         }
 
         .card-header {
@@ -119,31 +115,15 @@
         }
 
         .symbol {
-            font-size: 1.3rem;
+            font-size: 1.2rem;
             font-weight: bold;
             color: var(--accent-color);
         }
 
         .price {
-            font-size: 1.2rem;
+            font-size: 1.1rem;
             font-weight: bold;
         }
-
-        /* Signal Recommendation Badges */
-        .badge {
-            font-size: 0.75rem;
-            font-weight: 800;
-            padding: 4px 8px;
-            border-radius: 4px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            display: inline-block;
-        }
-        .badge-strong-buy { background-color: var(--green); color: #000; }
-        .badge-buy { background-color: var(--light-green); color: #fff; }
-        .badge-neutral { background-color: var(--neutral); color: #000; }
-        .badge-sell { background-color: var(--light-red); color: #fff; }
-        .badge-strong-sell { background-color: var(--red); color: #fff; }
 
         .metric-row {
             display: flex;
@@ -162,9 +142,9 @@
         .status {
             text-align: center;
             grid-column: 1 / -1;
-            font-size: 1.2rem;
+            font-size: 1.1rem;
             color: var(--text-secondary);
-            margin-top: 40px;
+            margin-top: 30px;
         }
     </style>
 </head>
@@ -173,7 +153,7 @@
 <div class="container">
     <header>
         <h1>EGX Technical Screener</h1>
-        <p style="color: var(--text-secondary);">Filter Egyptian Stocks by Technical Indicators</p>
+        <p style="color: var(--text-secondary);">Real-Time Market Indicators & Screener</p>
     </header>
 
     <div class="controls">
@@ -186,29 +166,28 @@
             <input type="number" id="rsiMax" value="70">
         </div>
         <div class="input-group">
-            <label for="minVolume">Min Traded Value (in Millions EGP)</label>
-            <input type="number" id="minVolume" placeholder="e.g. 5 for 5M EGP" value="1">
+            <label for="minVolume">Min Traded Value (EGP or Millions)</label>
+            <input type="number" id="minVolume" placeholder="e.g. 1000000 or 1" value="500000">
         </div>
         <button onclick="applyFilters()">Scan Market</button>
     </div>
 
     <div id="resultsGrid" class="grid"></div>
-    <div id="statusMessage" class="status">Click "Scan Market" to pull technical data...</div>
+    <div id="statusMessage" class="status">Click "Scan Market" to pull data...</div>
 </div>
 
 <script>
-    // Global variable to store raw fetched stocks
     let fetchedStocks = [];
 
     async function fetchTradingViewData() {
         const status = document.getElementById("statusMessage");
-        status.innerText = "Connecting to market via Cloudflare proxy...";
+        status.innerText = "Fetching market data...";
 
         const tvUrl = "https://scanner.tradingview.com/egypt/scan";
         
         // =================================================================
-        // REPLACE WITH YOUR REAL CLOUDFLARE WORKER URL:
-        const workerProxy = "https://my-stock-proxy.amr7-elsherif.workers.dev"; 
+        // REPLACE WITH YOUR CLOUDFLARE WORKER URL:
+        const workerProxy = "https://YOUR-WORKER-NAME.YOUR-SUBDOMAIN.workers.dev"; 
         // =================================================================
 
         const proxyEndpoint = `${workerProxy}/?url=${encodeURIComponent(tvUrl)}`;
@@ -223,9 +202,9 @@
                 "change",
                 "RSI",
                 "Value.Traded",
+                "volume",
                 "average_volume_10d_calc",
                 "average_volume_30d_calc",
-                "Recommend.All",
                 "description"
             ],
             sort: { sortBy: "Value.Traded", sortOrder: "desc" },
@@ -243,47 +222,39 @@
 
             const json = await response.json();
             
-            // Map raw rows into clean JS Objects
             fetchedStocks = json.data.map(item => {
                 const d = item.d;
                 
-                // Estimate 20D Avg Vol by averaging 10D and 30D indicators
-                const avgVol10 = d[5] || 0;
-                const avgVol30 = d[6] || 0;
-                const avgVol20 = (avgVol10 + avgVol30) / 2;
+                // Calculate 20-Day Average Volume from 10D and 30D indicators
+                const avg10 = d[6] || 0;
+                const avg30 = d[7] || 0;
+                let avg20 = (avg10 + avg30) / 2;
+                if (!avg20) avg20 = d[5] || 0; // fallback to today's volume if 20D is null
 
                 return {
                     symbol: item.s.replace("EGX:", ""),
                     name: d[8] || d[0],
-                    close: d[1],
-                    change: d[2],
-                    rsi: d[3],
+                    close: d[1] || 0,
+                    change: d[2] || 0,
+                    rsi: d[3] || 0,
                     tradedValue: d[4] || 0,
-                    avgVol20: avgVol20,
-                    recommendation: d[7] || 0
+                    volume: d[5] || 0,
+                    avgVol20: avg20
                 };
             });
 
             applyFilters();
         } catch (err) {
             console.error("Fetch Error:", err);
-            status.innerText = "Error fetching market data. Ensure your Cloudflare Worker URL is correctly set.";
+            status.innerText = "Error loading market data. Check your Cloudflare Worker URL.";
         }
     }
 
-    function getRecommendationBadge(score) {
-        // TradingView Recommend.All ranges from -1.0 to +1.0
-        if (score >= 0.5) return `<span class="badge badge-strong-buy">Strong Buy</span>`;
-        if (score >= 0.1) return `<span class="badge badge-buy">Buy</span>`;
-        if (score > -0.1) return `<span class="badge badge-neutral">Neutral</span>`;
-        if (score > -0.5) return `<span class="badge badge-sell">Sell</span>`;
-        return `<span class="badge badge-strong-sell">Strong Sell</span>`;
-    }
-
-    function formatNumber(num) {
+    function formatNum(num) {
+        if (!num) return "0";
         if (num >= 1e6) return (num / 1e6).toFixed(2) + "M";
         if (num >= 1e3) return (num / 1e3).toFixed(1) + "K";
-        return num ? num.toFixed(0) : "0";
+        return num.toFixed(0);
     }
 
     function applyFilters() {
@@ -300,19 +271,21 @@
         const rsiMin = parseFloat(document.getElementById("rsiMin").value) || 0;
         const rsiMax = parseFloat(document.getElementById("rsiMax").value) || 100;
         
-        // Input parsed in Millions EGP (e.g., input 1 = 1,000,000)
-        const minVolInput = parseFloat(document.getElementById("minVolume").value) || 0;
-        const minTradedValue = minVolInput * 1000000;
+        let minVolInput = parseFloat(document.getElementById("minVolume").value) || 0;
+        // Handle input if user enters small value thinking in Millions (e.g. entering 5 instead of 5,000,000)
+        if (minVolInput > 0 && minVolInput < 100) {
+            minVolInput = minVolInput * 1000000;
+        }
 
         const filtered = fetchedStocks.filter(stock => {
             const matchesRsi = stock.rsi >= rsiMin && stock.rsi <= rsiMax;
-            const matchesVol = stock.tradedValue >= minTradedValue;
+            const matchesVol = stock.tradedValue >= minVolInput;
             return matchesRsi && matchesVol;
         });
 
         if (filtered.length === 0) {
             status.style.display = "block";
-            status.innerText = "No stocks matched your filter criteria.";
+            status.innerText = "No stocks match your filter criteria.";
             return;
         }
 
@@ -332,31 +305,26 @@
                         <div style="font-size: 0.75rem; color: var(--text-secondary);">${stock.name}</div>
                     </div>
                     <div style="text-align: right;">
-                        <div class="price">${stock.close ? stock.close.toFixed(2) : "N/A"} EGP</div>
+                        <div class="price">${stock.close.toFixed(2)} EGP</div>
                         <div style="font-size: 0.85rem; color: ${changeColor}; font-weight: bold;">
-                            ${changeSign}${stock.change ? stock.change.toFixed(2) : "0.00"}%
+                            ${changeSign}${stock.change.toFixed(2)}%
                         </div>
                     </div>
                 </div>
 
                 <div class="metric-row">
-                    <span class="metric-label">Signal Recommendation:</span>
-                    <span>${getRecommendationBadge(stock.recommendation)}</span>
-                </div>
-
-                <div class="metric-row">
                     <span class="metric-label">RSI (14):</span>
-                    <span class="metric-value">${stock.rsi ? stock.rsi.toFixed(2) : "N/A"}</span>
+                    <span class="metric-value">${stock.rsi.toFixed(2)}</span>
                 </div>
 
                 <div class="metric-row">
-                    <span class="metric-label">Traded Value (Today):</span>
-                    <span class="metric-value">${formatNumber(stock.tradedValue)} EGP</span>
+                    <span class="metric-label">Traded Value:</span>
+                    <span class="metric-value">${formatNum(stock.tradedValue)} EGP</span>
                 </div>
 
                 <div class="metric-row">
-                    <span class="metric-label">Est. 20D Avg Vol:</span>
-                    <span class="metric-value">${formatNumber(stock.avgVol20)} shares</span>
+                    <span class="metric-label">20D Avg Volume:</span>
+                    <span class="metric-value">${formatNum(stock.avgVol20)} shares</span>
                 </div>
             `;
 
@@ -364,7 +332,6 @@
         });
     }
 
-    // Auto-run on load
     window.onload = fetchTradingViewData;
 </script>
 
