@@ -148,9 +148,6 @@
     <div id="status" class="status">Enter ticker symbol and press "Analyze".</div>
   </div>
 
-  <!-- Hidden JSONP Target for TV Data Fetching -->
-  <div id="tv-widget-container" style="display:none;"></div>
-
   <!-- Manual Entry Panel -->
   <div id="manualPanel" class="card hidden">
     <h2>✍️ Manual Session Entry</h2>
@@ -264,91 +261,49 @@ $('tickerInput').addEventListener('keypress', (e) => {
 });
 $('fetchBtn').addEventListener('click', runAnalysis);
 
-// Fetch Data via TV Script Tag Injection (Bypasses GitHub Pages CORS entirely)
-function fetchTradingViewData(symbol) {
-  return new Promise((resolve, reject) => {
-    const cleanSymbol = symbol.trim().toUpperCase().replace('.CA', '');
-    const fullTicker = `EGX:${cleanSymbol}`;
-    
-    // Create dynamically injected script pointing to TradingView's embed engine
-    const scriptId = 'tv-script-runner';
-    const oldScript = document.getElementById(scriptId);
-    if (oldScript) oldScript.remove();
+// Fetch Data via Cloudflare Worker Proxy
+async function fetchTradingViewData(ticker) {
+  const cleanSymbol = ticker.trim().toUpperCase().replace('.CA', '');
+  const tvUrl = "https://scanner.tradingview.com/egypt/scan";
+  
+  // PASTE YOUR CLOUDFLARE WORKER URL HERE:
+  const workerProxy = "https://my-stock-proxy.amr7-elsherif.workers.dev/"; 
+  const proxyEndpoint = `${workerProxy}/?url=${encodeURIComponent(tvUrl)}`;
 
-    const script = document.createElement('script');
-    script.id = scriptId;
-    script.src = `https://s3.tradingview.com/external-embedding/embed-widget-single-quote.js`;
-    script.async = true;
-    script.innerHTML = JSON.stringify({
-      "symbol": fullTicker,
-      "width": "100%",
-      "colorTheme": "dark",
-      "isTransparent": true,
-      "locale": "en"
-    });
+  const payload = {
+    "symbols": { "tickers": [`EGX:${cleanSymbol}`] },
+    "columns": ["name", "description", "close", "change", "change_abs", "high", "low", "open", "volume"]
+  };
 
-    // Fallback timer if symbol does not exist or network times out
-    const timeout = setTimeout(() => {
-      reject(new Error(`Timeout fetching market data for ${cleanSymbol}`));
-    }, 4000);
-
-    // Direct JSON API via TV Symbol Query Endpoint
-    fetch(`https://symbol-search.tradingview.com/symbol_search/v3/?text=${cleanSymbol}&hl=en`)
-      .then(r => r.json())
-      .then(res => {
-        clearTimeout(timeout);
-        if (res && res.symbols && res.symbols.length > 0) {
-          const matched = res.symbols.find(s => s.symbol === cleanSymbol || s.symbol === fullTicker) || res.symbols[0];
-          
-          // Secondary fetch for accurate quote stats
-          const quoteUrl = `https://scanner.tradingview.com/egypt/scan`;
-          fetch(`https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(quoteUrl)}`, {
-            method: 'POST',
-            body: JSON.stringify({
-              "symbols": { "tickers": [`EGX:${cleanSymbol}`] },
-              "columns": ["name", "description", "close", "change", "change_abs", "high", "low", "open", "volume"]
-            })
-          })
-          .then(r => r.json())
-          .then(qData => {
-            if (qData && qData.data && qData.data.length > 0) {
-              const d = qData.data[0].d;
-              resolve({
-                ticker: `${cleanSymbol}.CA`,
-                name: d[1] || matched.description || cleanSymbol,
-                close: d[2],
-                high: d[5] || d[2],
-                low: d[6] || d[2],
-                open: d[7] || d[2],
-                prevClose: d[2] - d[4],
-                volume: d[8] || 0
-              });
-            } else {
-              throw new Error("Scanner data empty");
-            }
-          })
-          .catch(() => {
-            // Fallback object from symbol search metadata
-            resolve({
-              ticker: `${cleanSymbol}.CA`,
-              name: matched.description || cleanSymbol,
-              close: matched.pricescale ? matched.pricescale : 10.0,
-              high: matched.pricescale ? matched.pricescale * 1.02 : 10.2,
-              low: matched.pricescale ? matched.pricescale * 0.98 : 9.8,
-              open: matched.pricescale ? matched.pricescale * 0.99 : 9.9,
-              prevClose: matched.pricescale ? matched.pricescale * 0.99 : 9.9,
-              volume: 0
-            });
-          });
-        } else {
-          reject(new Error(`Symbol ${cleanSymbol} not found.`));
-        }
-      })
-      .catch(err => {
-        clearTimeout(timeout);
-        reject(err);
-      });
+  const response = await fetch(proxyEndpoint, {
+    method: "POST",
+    headers: { "Content-Type": "text/plain" },
+    body: JSON.stringify(payload)
   });
+
+  if (!response.ok) {
+    throw new Error(`Worker returned status ${response.status}`);
+  }
+
+  const data = await response.json();
+  
+  if (data && data.data && data.data.length > 0) {
+    const d = data.data[0].d;
+    const close = d[2];
+    const changeAbs = d[4];
+    return {
+      ticker: `${cleanSymbol}.CA`,
+      name: d[1] || cleanSymbol,
+      close: close,
+      high: d[5] || close,
+      low: d[6] || close,
+      open: d[7] || close,
+      prevClose: close - changeAbs,
+      volume: d[8] || 0
+    };
+  } else {
+    throw new Error("No market data returned for " + cleanSymbol);
+  }
 }
 
 async function runAnalysis() {
@@ -364,7 +319,7 @@ async function runAnalysis() {
     $('manualPanel').classList.add('hidden');
   } catch (err) {
     console.error(err);
-    setStatus(`⚠️ Network blocked on GitHub Pages. Use "Manual Entry" below to input figures.`, true);
+    setStatus(`⚠️ Fetch failed. Verify your Cloudflare Worker URL or use Manual Entry.`, true);
     $('manualPanel').classList.remove('hidden');
   }
 }
