@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>تحليل الأسهم</title>
+<title>تحليل الأسهم الفني</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
 <style>
@@ -65,7 +65,6 @@
   .stat{background:var(--panel-2);border:1px solid var(--line);border-radius:10px;padding:10px;text-align:center;}
   .stat .lbl{font-size:12px;color:var(--muted);margin-bottom:4px;}
   .stat .val{font-size:16px;font-weight:800;}
-  svg text{font-family:'Tajawal',sans-serif;}
   .levels{width:100%;border-collapse:collapse;font-size:14px;}
   .levels td{padding:8px 4px;border-bottom:1px solid var(--line);}
   .levels td:first-child{color:var(--muted);}
@@ -79,12 +78,13 @@
     border-radius:999px;padding:5px 14px;font-size:13px;font-weight:700;}
   .footer-note{font-size:11.5px;color:var(--muted);text-align:center;line-height:1.8;margin-top:6px;}
   #shareCanvas{width:100%;border-radius:12px;border:1px solid var(--line);display:block;}
-  .tradingview-widget-container{height:420px;}
+  .tradingview-widget-container{height:450px;width:100%;position:relative;}
   #tvWidget{height:100%;width:100%;}
   .manual-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-top:10px;}
   .manual-grid label{font-size:12px;color:var(--muted);display:block;margin-bottom:3px;}
   .manual-grid input{width:100%;background:var(--panel-2);border:1px solid var(--line);color:var(--text);border-radius:8px;padding:8px;font-family:inherit;}
   .hidden{display:none;}
+  .strategy-box{background:var(--panel-2);border-right:4px solid var(--green);padding:12px 16px;border-radius:6px;margin-bottom:12px;font-size:14px;line-height:1.6;}
 </style>
 </head>
 <body>
@@ -95,9 +95,9 @@
     <input id="nameInput" placeholder="اسم الشركة (اختياري)" value="الغربية الاسلامية للتنمية العمرانية">
     <input id="tvInput" placeholder="رمز TradingView مثل EGX:GIHD" value="EGX:GIHD">
     <button id="tvUpdateBtn" class="secondary">📺 تحديث الشارت</button>
-    <button id="fetchBtn">📡 جلب أرقام إضافية (اختياري)</button>
+    <button id="fetchBtn">📡 جلب البيانات تلقائياً</button>
     <button id="manualBtn" class="secondary">✍️ إدخال يدوي</button>
-    <div id="status" class="status">الشارت ومستويات الدعم/المقاومة عليه بيشتغلوا من TradingView مباشرة (اضغط "تحديث الشارت" بعد كتابة الرمز). زر "جلب أرقام إضافية" اختياري لعرض ملخص نصي وتوصية مبنية على بيانات ياهو أو إدخالك اليدوي.</div>
+    <div id="status" class="status">أدخل الرمز ثم اضغط "تحديث الشارت" أو "جلب البيانات تلقائياً" لبدء التحليل الفني.</div>
   </div>
 
   <div id="manualPanel" class="card hidden">
@@ -114,12 +114,9 @@
   </div>
 
   <div class="card">
-    <h2>📺 شارت TradingView المباشر — بمستويات الدعم والمقاومة (Pivot Points) محسوبة من TradingView نفسه</h2>
+    <h2>📺 شارت TradingView المباشر ومستويات Pivot Points</h2>
     <div class="tradingview-widget-container">
       <div id="tvWidget"></div>
-    </div>
-    <div style="font-size:12px;color:var(--muted);margin-top:8px;">
-      الخطوط الأفقية على الشارت (PP, R1, R2, S1, S2...) هي مستويات الدعم والمقاومة نفسها، محسوبة ومرسومة مباشرة بواسطة TradingView — مش من حساباتنا.
     </div>
   </div>
 
@@ -128,7 +125,7 @@
     <div class="card">
       <div class="head-row">
         <div class="title-block">
-          <h1>تحليل سهم</h1>
+          <h1>تقرير التحليل الفني</h1>
           <div class="ticker" id="outTicker">GIHD.CA</div>
           <div style="color:var(--muted);font-size:14px;margin-top:2px;" id="outName">—</div>
         </div>
@@ -147,18 +144,18 @@
     </div>
 
     <div class="card">
-      <h2>🎯 المستويات الفنية (محسوبة من بيانات ياهو / الإدخال اليدوي)</h2>
+      <h2>🎯 المستويات الفنية (Classic Pivot Points)</h2>
       <table class="levels">
-        <tr><td>مقاومة 2</td><td id="lvlR2">--</td></tr>
-        <tr><td>مقاومة 1</td><td id="lvlR1">--</td></tr>
-        <tr><td>نقطة الارتكاز</td><td id="lvlP">--</td></tr>
-        <tr><td>دعم 1</td><td id="lvlS1">--</td></tr>
-        <tr><td>دعم 2</td><td id="lvlS2">--</td></tr>
+        <tr><td>مقاومة 2 (R2)</td><td id="lvlR2">--</td></tr>
+        <tr><td>مقاومة 1 (R1)</td><td id="lvlR1">--</td></tr>
+        <tr><td>نقطة الارتكاز (Pivot)</td><td id="lvlP">--</td></tr>
+        <tr><td>دعم 1 (S1)</td><td id="lvlS1">--</td></tr>
+        <tr><td>دعم 2 (S2)</td><td id="lvlS2">--</td></tr>
       </table>
     </div>
 
     <div class="card">
-      <h2>📊 الاتجاه على المدى القصير</h2>
+      <h2>📊 الاتجاه على المدى القصير والتقييم</h2>
       <div>
         <span class="badge" id="trendBadge">--</span>
         <span class="stars" id="ratingStars" style="margin-inline-start:12px;"></span>
@@ -166,66 +163,72 @@
     </div>
 
     <div class="card">
-      <h2>👁️ نظرة فنية</h2>
+      <h2>👁️ منهجية الاستراتيجية والنظرة الفنية</h2>
+      <div class="strategy-box">
+        <strong>📋 استراتيجية التداول المطبقة:</strong><br>
+        تعتمد الاستراتيجية على <strong>اختبار نقطة الارتكاز المدارية (Pivot Point Breakthrough & Bounce)</strong>. 
+        يعتبر التداول فوق نقطة الارتكاز إشارة قوة تستهدف المقاومة الأولى ($R_1$) ثم المقاومة الثانية ($R_2$) مع جعل $S_1$ مستوى وقف خسارة، بينما التداول أسفل نقطة الارتكاز يشير إلى سيطرة بيعية تستهدف مستويات الدعم $S_1$ و $S_2$.
+      </div>
       <ul class="notes" id="techNotes"></ul>
     </div>
 
     <div class="card">
-      <h2>✅ ملخص التوصية</h2>
+      <h2>✅ ملخص التوصية والخطة السعرية</h2>
       <div class="rec-grid">
-        <div class="stat"><div class="lbl">وقف الخسارة</div><div class="val" id="outStop">--</div></div>
+        <div class="stat"><div class="lbl">وقف الخسارة المقترح</div><div class="val" id="outStop">--</div></div>
         <div class="stat"><div class="lbl">السعر المستهدف</div><div class="val" id="outTarget">--</div></div>
-        <div class="stat"><div class="lbl">العائد المتوقع</div><div class="val" id="outReturn">--</div></div>
-        <div class="stat"><div class="lbl">نسبة الثقة</div><div class="val" id="outConf">--</div></div>
+        <div class="stat"><div class="lbl">العائد المتوقع للهدف</div><div class="val" id="outReturn">--</div></div>
+        <div class="stat"><div class="lbl">نسبة ثقة النموذج</div><div class="val" id="outConf">--</div></div>
       </div>
       <div style="margin-top:14px;font-size:16px;font-weight:800;" id="outRecTitle">--</div>
       <ul class="notes" id="recNotes" style="margin-top:8px;"></ul>
     </div>
 
     <div class="card">
-      <h2>🖼️ صورة قابلة للمشاركة</h2>
-      <canvas id="shareCanvas" width="1080" height="1400"></canvas>
-      <button id="downloadBtn" style="margin-top:12px;width:100%;background:var(--green);color:#04140a;border:none;border-radius:10px;padding:12px;font-family:inherit;font-weight:800;font-size:15px;cursor:pointer;">⬇️ تنزيل الصورة</button>
+      <h2>🖼️ بطاقة التقرير القابلة للمشاركة</h2>
+      <canvas id="shareCanvas" width="1080" height="1450"></canvas>
+      <button id="downloadBtn" style="margin-top:12px;width:100%;background:var(--green);color:#04140a;border:none;border-radius:10px;padding:12px;font-family:inherit;font-weight:800;font-size:15px;cursor:pointer;">⬇️ تنزيل بطاقة التحليل</button>
     </div>
 
     <div class="footer-note">
-      هذا التحليل ناتج عن حسابات فنية آلية (نقاط الارتكاز والدعم والمقاومة) لأغراض تعليمية فقط،<br>
-      ولا يُعد توصية مباشرة بالشراء أو البيع، ولا يغني عن استشارة مستشار مالي مرخّص.
+      هذا التحليل ناتج عن معادلات فنية آلية لأغراض تعليمية واستسترشادية فقط، ولا يعتبر توصية استثمارية مباشرة.
     </div>
   </div>
 
 </div>
 
+<!-- تحميل سكريبت TradingView الرسمي بشكل موثوق -->
 <script src="https://s3.tradingview.com/tv.js"></script>
 <script>
-let currentData = null; // {open,high,low,close,prevClose,volume,ticker,name,intraday:[{t,p}],daily:[{close,up}]}
+let currentData = null;
 
 function renderTVWidget(symbol){
   const container = document.getElementById('tvWidget');
   if(!container) return;
   container.innerHTML = '';
-  if(typeof TradingView === 'undefined' || !TradingView.widget){
-    container.innerHTML = '<div style="color:#8ea99a;font-size:13px;padding:12px;">تعذر تحميل شارت TradingView (تأكد من الاتصال بالإنترنت).</div>';
-    return;
-  }
-  try{
+  
+  const tvSymbol = symbol || 'EGX:GIHD';
+  
+  if (typeof TradingView !== 'undefined') {
     new TradingView.widget({
-      autosize: true,
-      symbol: symbol || 'EGX:GIHD',
-      interval: 'D',
-      timezone: 'Etc/UTC',
-      theme: 'dark',
-      style: '1',
-      locale: 'ar',
-      toolbar_bg: '#0d1512',
-      enable_publishing: false,
-      hide_top_toolbar: false,
-      save_image: false,
-      studies: ['Pivot Points Standard@tv-basicstudies'],
-      container_id: 'tvWidget'
+      "autosize": true,
+      "symbol": tvSymbol,
+      "interval": "D",
+      "timezone": "Africa/Cairo",
+      "theme": "dark",
+      "style": "1",
+      "locale": "ar",
+      "toolbar_bg": "#0d1512",
+      "enable_publishing": false,
+      "hide_top_toolbar": false,
+      "save_image": true,
+      "studies": [
+        "PivotPointsStandard@tv-basicstudies"
+      ],
+      "container_id": "tvWidget"
     });
-  }catch(e){
-    container.innerHTML = '<div style="color:#8ea99a;font-size:13px;padding:12px;">تعذر تحميل شارت TradingView لهذا الرمز.</div>';
+  } else {
+    container.innerHTML = '<div style="color:var(--muted);padding:20px;text-align:center;">جاري تحميل مكتبة TradingView... يرجى إعادة الضغط على تحديث الشارت بعد لحظات.</div>';
   }
 }
 
@@ -246,7 +249,7 @@ $('fetchBtn').addEventListener('click', async ()=>{
   const ticker = $('tickerInput').value.trim();
   const name = $('nameInput').value.trim();
   if(!ticker){ setStatus('من فضلك أدخل رمز السهم أولاً.', true); return; }
-  setStatus('⏳ جاري جلب بيانات "' + ticker + '"...');
+  setStatus('⏳ جاري جلب البيانات من Yahoo Finance...');
   try{
     const [intradayResult, dailyResult] = await Promise.all([
       fetchYahoo(ticker, '1d', '5m'),
@@ -256,10 +259,10 @@ $('fetchBtn').addEventListener('click', async ()=>{
     currentData = built;
     render(built);
     renderTVWidget($('tvInput').value.trim());
-    setStatus('✅ تم جلب البيانات بنجاح من Yahoo Finance.');
+    setStatus('✅ تم الجلب والتحليل بنجاح.');
   }catch(err){
     console.error(err);
-    setStatus('⚠️ تعذر جلب بيانات هذا الرمز تلقائيًا (قد يكون السهم غير مدرج على ياهو فاينانس أو أن المتصفح منع الطلب). جرّب "إدخال يدوي" بدلًا من ذلك.', true);
+    setStatus('⚠️ تعذر الجلب التلقائي. يمكنك إدخال الأسعار يدويًا عبر زر "إدخال يدوي".', true);
   }
 });
 
@@ -272,27 +275,27 @@ $('applyManual').addEventListener('click', ()=>{
   const c = parseFloat($('m_close').value);
   const p = parseFloat($('m_prev').value) || c;
   const v = parseFloat($('m_vol').value) || null;
+
   if([o,h,l,c].some(x=>isNaN(x))){
-    setStatus('من فضلك أدخل الافتتاح والأعلى والأدنى والإغلاق كأرقام صحيحة.', true);
+    setStatus('يرجى إدخال قيم صحيحة للأسعار (الافتتاح، الأعلى، الأدنى، الإغلاق).', true);
     return;
   }
   const built = {
     ticker, name, open:o, high:h, low:l, close:c, prevClose:p, volume:v,
-    intraday: [{t:'افتتاح',p:o},{t:'أعلى',p:h},{t:'أدنى',p:l},{t:'إغلاق',p:c}],
-    daily: null
+    intraday: [], daily: null
   };
   currentData = built;
   render(built);
   renderTVWidget($('tvInput').value.trim());
-  setStatus('✅ تم تحليل البيانات المُدخلة يدويًا.');
+  setStatus('✅ تم تحليل البيانات المدخلة يدويًا بنجاح.');
 });
 
 async function fetchYahoo(ticker, range, interval){
   const target = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(ticker)}?range=${range}&interval=${interval}`;
   const attempts = [
-    target,
+    'https://corsproxy.io/?' + encodeURIComponent(target),
     'https://api.allorigins.win/raw?url=' + encodeURIComponent(target),
-    'https://corsproxy.io/?' + encodeURIComponent(target)
+    target
   ];
   let lastErr = null;
   for(const url of attempts){
@@ -302,87 +305,85 @@ async function fetchYahoo(ticker, range, interval){
       const json = await res.json();
       const result = json?.chart?.result?.[0];
       if(result) return result;
-      lastErr = new Error('لا توجد بيانات');
     }catch(e){ lastErr = e; }
   }
-  throw lastErr || new Error('فشل الجلب');
+  throw lastErr || new Error('فشل جلب البيانات');
 }
 
 function buildFromYahoo(intradayResult, dailyResult, ticker, name){
   const meta = intradayResult.meta || {};
   const q = intradayResult.indicators?.quote?.[0] || {};
-  const ts = intradayResult.timestamp || [];
-  const closes = q.close || [];
+  const closes = (q.close || []).filter(x=>x!=null);
   const highs = (q.high||[]).filter(x=>x!=null);
   const lows = (q.low||[]).filter(x=>x!=null);
   const opens = (q.open||[]).filter(x=>x!=null);
 
-  const last = meta.regularMarketPrice ?? closes.filter(x=>x!=null).slice(-1)[0];
+  const last = meta.regularMarketPrice ?? closes.slice(-1)[0];
   const prevClose = meta.chartPreviousClose ?? meta.previousClose ?? last;
   const dayHigh = meta.regularMarketDayHigh ?? Math.max(...highs);
   const dayLow = meta.regularMarketDayLow ?? Math.min(...lows);
   const dayOpen = opens[0] ?? prevClose;
   const volume = meta.regularMarketVolume ?? null;
 
-  const intraday = ts.map((t,i)=>({t, p: closes[i]})).filter(pt=>pt.p!=null);
-
-  let daily = null;
-  if(dailyResult){
-    const dq = dailyResult.indicators?.quote?.[0] || {};
-    const dc = dq.close || [];
-    daily = dc.map((c,i)=>({close:c, up: i>0 ? c>=dc[i-1] : true})).filter(d=>d.close!=null).slice(-15);
-  }
-
   return {
     ticker, name: name || meta.longName || meta.shortName || ticker,
-    open: dayOpen, high: dayHigh, low: dayLow, close: last, prevClose, volume,
-    intraday, daily
+    open: dayOpen, high: dayHigh, low: dayLow, close: last, prevClose, volume
   };
 }
 
 function computeAnalysis(d){
   const {open,high,low,close,prevClose} = d;
-  const pivot = (high+low+close)/3;
-  const r1 = 2*pivot - low;
-  const s1 = 2*pivot - high;
-  const r2 = pivot + (high-low);
-  const s2 = pivot - (high-low);
+  
+  // حساب مستويات الارتكاز الفنية القياسية
+  const pivot = (high + low + close) / 3;
+  const r1 = (2 * pivot) - low;
+  const s1 = (2 * pivot) - high;
+  const r2 = pivot + (high - low);
+  const s2 = pivot - (high - low);
 
-  const pct = prevClose ? ((close-prevClose)/prevClose*100) : 0;
-  const trendUp = close >= open;
+  const pct = prevClose ? ((close - prevClose) / prevClose * 100) : 0;
+  const trendUp = close >= pivot;
 
   let rating = 3;
-  if(pct > 1) rating++;
-  if(pct > 3) rating++;
+  if(close > pivot) rating++;
+  if(close > r1) rating++;
   if(close < pivot) rating--;
-  if(pct < -1) rating--;
+  if(close < s1) rating--;
   rating = Math.max(1, Math.min(5, rating));
 
-  const target = close < r1 ? r1 : r2;
-  const stop = close > s1 ? s1 : s2;
-  const expectedReturn = ((target-close)/close*100);
+  // تحديث الأهداف ووقف الخسارة بناءً على الموقع من Pivot
+  let target, stop;
+  if(close >= pivot){
+    target = close < r1 ? r1 : r2;
+    stop = s1;
+  } else {
+    target = r1;
+    stop = s2;
+  }
+  
+  const expectedReturn = ((target - close) / close * 100);
 
-  let confidence = 55 + Math.min(25, Math.abs(pct)*4) + (close>pivot ? 8 : -8);
-  confidence = Math.max(35, Math.min(88, Math.round(confidence)));
+  let confidence = 50 + Math.min(25, Math.abs(pct)*3) + (close > pivot ? 10 : -5);
+  confidence = Math.max(40, Math.min(90, Math.round(confidence)));
 
   let recTitle, recNotes;
-  if(close >= r1*0.995){
-    recTitle = '⏳ انتظر: السهم يختبر مستوى مقاومة مهم';
+  if(close >= r1*0.99){
+    recTitle = '⏳ منطقة اختبار المقاومة الأولى R1';
     recNotes = [
-      'السهم اقترب أو تجاوز مستوى المقاومة ' + fmt(r1) + '، وهذا يتطلب تأكيد الاختراق بحجم تداول مرتفع.',
-      'يُفضل انتظار إغلاق جلسة فوق هذا المستوى قبل اتخاذ قرار الشراء.'
+      'يتداول السهم بالقرب من المقاومة ' + fmt(r1) + '. الاختراق الثابت بحجم تداول مرتفع يفتح الهدف نحو ' + fmt(r2) + '.',
+      'يُوصى بانتظار الإغلاق فوق المقاومة لتأكيد قوة الاتجاه الصاعد.'
     ];
-  } else if(close <= s1*1.005){
-    recTitle = '⚠️ حذر: السهم قريب من مستوى دعم مهم';
+  } else if(close <= s1*1.01){
+    recTitle = '⚠️ اختبار مستوى الدعم الأول S1';
     recNotes = [
-      'كسر مستوى الدعم ' + fmt(s1) + ' قد يفتح المجال لمزيد من الهبوط نحو ' + fmt(s2) + '.',
-      'يُفضل مراقبة السهم عن قرب وعدم الدخول قبل تأكيد الارتداد.'
+      'السهم يتواجد بالقرب من مستوى الدعم الرئيسي عند ' + fmt(s1) + '.',
+      'كسر هذا المستوى يستوجب تفعيل وقف الخسارة لتجنب التراجع نحو ' + fmt(s2) + '.'
     ];
   } else {
-    recTitle = trendUp ? '📈 اتجاه إيجابي قصير المدى' : '📉 اتجاه سلبي قصير المدى';
+    recTitle = trendUp ? '📈 إشارة إيجابية (فوق نقطة الارتكاز)' : '📉 إشارة سلبية (تحت نقطة الارتكاز)';
     recNotes = [
-      trendUp ? 'السهم يتحرك أعلى سعر الافتتاح بزخم إيجابي نسبي.' : 'السهم يتحرك أسفل سعر الافتتاح، ويُفضل الحذر قبل الدخول.',
-      'المستوى ' + fmt(target) + ' يمثل الهدف الفني القادم، بينما ' + fmt(stop) + ' هو مستوى وقف الخسارة المقترح.'
+      trendUp ? 'استقرار السهم أعتاب نقطة الارتكاز (' + fmt(pivot) + ') يعزز فرص استكمال الصعود.' : 'تداول السهم أسفل نقطة الارتكاز (' + fmt(pivot) + ') يضغط عليه سلبياً.',
+      'الهدف المحدد طبقاً للمخطط: ' + fmt(target) + ' | وقف الخسارة المقترح: ' + fmt(stop)
     ];
   }
 
@@ -414,9 +415,8 @@ function render(d){
   $('lvlS1').textContent = fmt(a.s1);
   $('lvlS2').textContent = fmt(a.s2);
 
-  $('trendBadge').textContent = a.trendUp ? '📈 اتجاه صاعد' : '📉 اتجاه هابط';
+  $('trendBadge').textContent = a.trendUp ? '📈 اتجاه إيجابي (أعلى الارتكاز)' : '📉 اتجاه سلبي (أدنى الارتكاز)';
   $('trendBadge').style.color = a.trendUp ? 'var(--green)' : 'var(--red)';
-  $('trendBadge').style.borderColor = a.trendUp ? 'var(--green-dim)' : '#6b2222';
 
   const starsEl = $('ratingStars');
   starsEl.innerHTML = '';
@@ -430,11 +430,9 @@ function render(d){
   const notesEl = $('techNotes');
   notesEl.innerHTML = '';
   const notes = [
-    a.trendUp
-      ? 'السهم كان في اتجاه صاعد خلال الجلسة، وصولاً إلى مستوى ' + fmt(d.high) + ' جنيه.'
-      : 'السهم شهد ضغطًا سلبيًا خلال الجلسة، وهبط حتى مستوى ' + fmt(d.low) + ' جنيه.',
-    'منطقة الدعم ' + fmt(a.s1) + ' مهمة ويجب مراقبتها، واختراق ' + fmt(a.r1) + ' قد يجدد الصعود.',
-    'نقطة الارتكاز اليومية عند ' + fmt(a.pivot) + '، وهي الفاصل بين السيناريو الإيجابي والسلبي لبقية الجلسة.'
+    'نقطة الارتكاز المحورية للجلسة تقع عند ' + fmt(a.pivot) + ' جنيه وهي الحد الفاصل للاتجاه.',
+    a.trendUp ? 'يتداول السهم أعلى نقطة الارتكاز مما يعطي أرجحية لاستهدف المقاومة ' + fmt(a.r1) : 'يتداول السهم أسفل الارتكاز مما يعرضه لمخاطر الهبوط نحو الدعم ' + fmt(a.s1),
+    'نطاق الحركة المتوقع للجلسة يقع بين ' + fmt(a.s2) + ' و ' + fmt(a.r2) + '.'
   ];
   notes.forEach(n=>{ const li=document.createElement('li'); li.textContent=n; notesEl.appendChild(li); });
 
@@ -456,7 +454,6 @@ function drawShareCanvas(d, a){
   const W=cv.width, H=cv.height;
   ctx.direction='rtl';
 
-  // background
   const grad = ctx.createLinearGradient(0,0,0,H);
   grad.addColorStop(0,'#0d1512'); grad.addColorStop(1,'#080b09');
   ctx.fillStyle = grad; ctx.fillRect(0,0,W,H);
@@ -466,7 +463,7 @@ function drawShareCanvas(d, a){
 
   ctx.textAlign='right';
   ctx.fillStyle=muted; ctx.font='28px Tajawal, sans-serif';
-  ctx.fillText('تحليل سهم', rightX, 80);
+  ctx.fillText('بطاقة التحليل الفني', rightX, 80);
   ctx.fillStyle=green; ctx.font='800 64px Tajawal, sans-serif';
   ctx.fillText(d.ticker, rightX, 150);
   ctx.fillStyle=text; ctx.font='26px Tajawal, sans-serif';
@@ -476,7 +473,6 @@ function drawShareCanvas(d, a){
   ctx.fillStyle=muted; ctx.font='22px Tajawal, sans-serif';
   ctx.fillText(new Date().toLocaleDateString('ar-EG',{year:'numeric',month:'long',day:'numeric'}), 60, 80);
 
-  // price
   const chgVal = d.close-d.prevClose;
   ctx.textAlign='right';
   ctx.fillStyle=text; ctx.font='800 60px Tajawal, sans-serif';
@@ -484,7 +480,6 @@ function drawShareCanvas(d, a){
   ctx.fillStyle = chgVal>=0?green:red; ctx.font='700 30px Tajawal, sans-serif';
   ctx.fillText((chgVal>=0?'+':'')+fmt(chgVal)+'  ('+(a.pct>=0?'+':'')+a.pct.toFixed(2)+'%)', rightX, 315);
 
-  // stat grid
   function statBox(x,y,w,h,label,val){
     ctx.fillStyle=panel; roundRect(ctx,x,y,w,h,12); ctx.fill();
     ctx.strokeStyle=line; ctx.lineWidth=1; roundRect(ctx,x,y,w,h,12); ctx.stroke();
@@ -494,18 +489,18 @@ function drawShareCanvas(d, a){
     ctx.fillStyle=text; ctx.font='800 26px Tajawal, sans-serif';
     ctx.fillText(val, x+w/2, y+70);
   }
+
   const gy=360, gw=(W-120-30)/4, gh=90;
   statBox(60,gy,gw,gh,'أعلى سعر',fmt(d.high));
   statBox(60+gw+10,gy,gw,gh,'أدنى سعر',fmt(d.low));
   statBox(60+2*(gw+10),gy,gw,gh,'الافتتاح',fmt(d.open));
   statBox(60+3*(gw+10),gy,gw,gh,'الإغلاق',fmt(d.close));
 
-  // levels
   let ly=520;
   ctx.textAlign='right'; ctx.fillStyle=muted; ctx.font='700 26px Tajawal, sans-serif';
-  ctx.fillText('المستويات الفنية', rightX, ly);
+  ctx.fillText('المستويات الفنية (Pivot Points)', rightX, ly);
   ly+=45;
-  const levels = [['مقاومة 2',a.r2,red],['مقاومة 1',a.r1,red],['نقطة الارتكاز',a.pivot,muted],['دعم 1',a.s1,green],['دعم 2',a.s2,green]];
+  const levels = [['مقاومة 2 (R2)',a.r2,red],['مقاومة 1 (R1)',a.r1,red],['نقطة الارتكاز (PP)',a.pivot,muted],['دعم 1 (S1)',a.s1,green],['دعم 2 (S2)',a.s2,green]];
   levels.forEach(([lbl,val,col])=>{
     ctx.fillStyle=panel; roundRect(ctx,60,ly-32,W-120,52,10); ctx.fill();
     ctx.textAlign='right'; ctx.fillStyle=text; ctx.font='24px Tajawal, sans-serif';
@@ -515,34 +510,20 @@ function drawShareCanvas(d, a){
     ly+=62;
   });
 
-  // rating stars
-  ly+=20;
-  ctx.textAlign='right'; ctx.fillStyle=muted; ctx.font='700 24px Tajawal, sans-serif';
-  ctx.fillText('تقييم السهم', rightX, ly);
-  ctx.font='34px Tajawal, sans-serif';
-  let sx = rightX-10;
-  for(let i=0;i<5;i++){
-    ctx.fillStyle = i<a.rating ? green : '#2a3a30';
-    ctx.fillText('★', sx, ly+45);
-    sx -= 34;
-  }
-
-  // recommendation box
-  ly+=90;
-  ctx.fillStyle=panel; roundRect(ctx,60,ly,W-120,230,14); ctx.fill();
-  ctx.strokeStyle=line; roundRect(ctx,60,ly,W-120,230,14); ctx.stroke();
-  ctx.textAlign='right'; ctx.fillStyle=green; ctx.font='800 28px Tajawal, sans-serif';
+  ly+=30;
+  ctx.fillStyle=panel; roundRect(ctx,60,ly,W-120,220,14); ctx.fill();
+  ctx.strokeStyle=line; roundRect(ctx,60,ly,W-120,220,14); ctx.stroke();
+  ctx.textAlign='right'; ctx.fillStyle=green; ctx.font='800 26px Tajawal, sans-serif';
   wrapText(ctx, a.recTitle, rightX-20, ly+45, W-160, 34);
 
-  const rgy = ly+90;
+  const rgy = ly+85;
   const rgw = (W-120-30)/3;
   statBox(60,rgy,rgw,90,'وقف الخسارة',fmt(a.stop));
   statBox(60+rgw+15,rgy,rgw,90,'الهدف',fmt(a.target));
   statBox(60+2*(rgw+15),rgy,rgw,90,'نسبة الثقة',a.confidence+'%');
 
-  // footer
   ctx.textAlign='center'; ctx.fillStyle=muted; ctx.font='18px Tajawal, sans-serif';
-  wrapText(ctx, 'هذا التحليل ناتج عن حسابات فنية آلية لأغراض تعليمية فقط، ولا يُعد توصية مباشرة بالشراء أو البيع.', W/2, H-40, W-160, 26);
+  wrapText(ctx, 'استراتيجية التداول: الاختراق والارتداد من نقاط الارتكاز المدارية (Pivot Point Breakthrough).', W/2, H-40, W-160, 26);
 }
 
 function roundRect(ctx,x,y,w,h,r){
@@ -558,15 +539,15 @@ function roundRect(ctx,x,y,w,h,r){
 function wrapText(ctx, text, x, y, maxWidth, lineHeight){
   const words = text.split(' ');
   let line='';
-  const lines=[];
   words.forEach(w=>{
     const test = line + w + ' ';
     if(ctx.measureText(test).width > maxWidth && line){
-      lines.push(line); line = w+' ';
+      ctx.fillText(line.trim(), x, y);
+      line = w+' ';
+      y += lineHeight;
     } else line = test;
   });
-  lines.push(line);
-  lines.forEach((l,i)=> ctx.fillText(l.trim(), x, y + i*lineHeight));
+  ctx.fillText(line.trim(), x, y);
 }
 
 $('downloadBtn').addEventListener('click', ()=>{
@@ -582,7 +563,9 @@ $('tvUpdateBtn').addEventListener('click', ()=>{
 });
 
 window.addEventListener('load', ()=>{
-  renderTVWidget($('tvInput').value.trim());
+  setTimeout(()=>{
+    renderTVWidget($('tvInput').value.trim());
+  }, 500);
 });
 </script>
 </body>
