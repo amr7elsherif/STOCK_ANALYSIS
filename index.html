@@ -3,64 +3,95 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>محلل الأسهم الفني - Stock Analyzer</title>
+    <title>محلل الأسهم الفني الشامل - Stock Analyzer</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- مكتبة تحويل التقرير إلى صورة -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 </head>
-<body class="bg-gray-900 text-gray-100 font-sans p-6">
+<body class="bg-gray-900 text-gray-100 font-sans p-4 md:p-6">
 
     <div class="max-w-4xl mx-auto space-y-6">
 
-        <!-- Input & Search Section (قسم إدخال بيانات السهم) -->
+        <!-- Input & Controls Header -->
         <div class="bg-gray-800 rounded-xl border border-gray-700 p-4 shadow-lg flex flex-col md:flex-row gap-4 items-center justify-between">
-            <div class="w-full md:w-2/3 flex gap-2">
-                <input type="text" id="stock-input" placeholder="أدخل رمز أو اسم السهم (مثال: EGYP أو COMI)..." value="EGYP" 
+            <div class="w-full md:w-1/2 flex gap-2">
+                <input type="text" id="stock-input" placeholder="أدخل رمز السهم..." value="EGYP" 
                     class="w-full bg-gray-900 border border-gray-700 text-white rounded-lg px-4 py-2 text-sm focus:outline-none focus:border-blue-500">
                 <button onclick="updateStockData()" id="btn-search" class="bg-blue-600 hover:bg-blue-500 text-white px-5 py-2 rounded-lg text-sm font-semibold transition shrink-0">
                     عرض التقرير
                 </button>
             </div>
-            <!-- Language Switcher -->
-            <button onclick="toggleLanguage()" class="bg-gray-700 hover:bg-gray-600 text-xs text-blue-300 font-semibold px-3 py-2 rounded-lg border border-gray-600 transition w-full md:w-auto">
-                🌐 English / عربي
-            </button>
+            
+            <div class="flex items-center gap-3 w-full md:w-auto justify-end">
+                <!-- Export Image Button -->
+                <button onclick="exportReportAsImage()" class="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold px-4 py-2 rounded-lg transition flex items-center gap-1">
+                    📸 <span id="btn-export-text">تصدير التقرير كصورة</span>
+                </button>
+                <!-- Language Toggle Button -->
+                <button onclick="toggleLanguage()" class="bg-gray-700 hover:bg-gray-600 text-xs text-blue-300 font-semibold px-3 py-2 rounded-lg border border-gray-600 transition">
+                    🌐 English / عربي
+                </button>
+            </div>
         </div>
 
-        <!-- Main Report Card (التقرير التحليلي) -->
-        <div class="bg-gray-800 rounded-xl shadow-lg border border-gray-700 p-6">
+        <!-- Printable / Exportable Report Card -->
+        <div id="report-card" class="bg-gray-800 rounded-xl shadow-2xl border border-gray-700 p-6 space-y-6">
             
-            <!-- Header -->
-            <div class="flex flex-col md:flex-row justify-between items-start md:items-center border-b border-gray-700 pb-4 mb-6 gap-4">
+            <!-- Report Header -->
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center border-b border-gray-700 pb-4 gap-4">
                 <div>
                     <h1 class="text-2xl font-bold text-white flex items-center gap-2">
-                        <span id="display-ticker" class="text-blue-400">EGYP</span> / <span id="title">تقرير التحليل الفني</span>
+                        <span id="display-ticker" class="text-blue-400">EGYP</span> / <span id="title">تقرير التحليل الفني الشامل</span>
                     </h1>
                     <p class="text-sm text-gray-400">
-                        <span id="label-strategy">الاستراتيجية:</span> 
+                        <span id="label-strategy">الاستراتيجية النشطة:</span> 
                         <span class="text-blue-400 font-semibold" id="val-strategy">تقييم إعادة اختبار الدعم</span>
                     </p>
                 </div>
-                
                 <div>
-                    <span class="inline-block bg-yellow-500/10 text-yellow-400 border border-yellow-500/30 text-xs px-3 py-1 rounded-full font-semibold" id="status-badge">
+                    <span class="inline-block bg-yellow-500/10 text-yellow-400 border border-yellow-500/30 text-xs px-3 py-1.5 rounded-full font-semibold" id="status-badge">
                         الحالة: مراقبة (3.0 / 5.0)
                     </span>
                 </div>
             </div>
 
-            <!-- Strategy Tabs -->
-            <div class="grid grid-cols-2 gap-4 mb-6">
-                <div class="bg-gray-900/50 border border-gray-700 p-3 rounded-lg text-center opacity-50">
-                    <p class="text-xs text-gray-400 uppercase font-semibold" id="tab-strat-a">استراتيجية أ</p>
-                    <p class="text-sm font-bold text-gray-300" id="tab-breakout">اختراق المقاومة</p>
+            <!-- Key Technical Metrics Grid (القيم الفنية، المستويات، القمة والحجم) -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                <div class="bg-gray-900/60 border border-gray-700/80 p-3 rounded-lg">
+                    <p class="text-xs text-gray-400" id="lbl-entry">منطقة الدخول المقترحة</p>
+                    <p class="text-base font-bold text-emerald-400" id="val-entry">183.50 - 185.00 ج.م</p>
                 </div>
-                <div class="bg-blue-900/20 border border-blue-500/50 p-3 rounded-lg text-center">
-                    <p class="text-xs text-blue-400 uppercase font-semibold" id="tab-strat-b">استراتيجية ب (نشطة)</p>
-                    <p class="text-sm font-bold text-blue-200" id="tab-retest">إعادة اختبار الدعم</p>
+                <div class="bg-gray-900/60 border border-gray-700/80 p-3 rounded-lg">
+                    <p class="text-xs text-gray-400" id="lbl-stop">وقف الخسارة (Stop Loss)</p>
+                    <p class="text-base font-bold text-rose-400" id="val-stop">178.00 ج.م (كسر الدعم)</p>
+                </div>
+                <div class="bg-gray-900/60 border border-gray-700/80 p-3 rounded-lg">
+                    <p class="text-xs text-gray-400" id="lbl-ath">القمة التاريخية (ATH)</p>
+                    <p class="text-base font-bold text-yellow-400" id="val-ath">215.00 ج.م</p>
+                </div>
+                <div class="bg-gray-900/60 border border-gray-700/80 p-3 rounded-lg">
+                    <p class="text-xs text-gray-400" id="lbl-volume">حجم التداول (Volume)</p>
+                    <p class="text-base font-bold text-blue-300" id="val-volume">0.85x (ضعيف)</p>
+                </div>
+            </div>
+
+            <!-- Support & Resistance Levels Card -->
+            <div class="bg-gray-900/40 border border-gray-700 p-4 rounded-lg">
+                <h3 class="text-xs uppercase font-semibold text-gray-400 mb-2" id="lbl-sr-title">مستويات الدعم والمقاومة الرئيسية</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+                    <div class="flex justify-between items-center bg-emerald-950/20 border border-emerald-500/20 p-2.5 rounded">
+                        <span class="text-emerald-300 font-medium" id="lbl-supports">نقاط الدعم (Supports):</span>
+                        <span class="font-mono font-bold text-emerald-400" id="val-supports">S1: 183.00 | S2: 175.00</span>
+                    </div>
+                    <div class="flex justify-between items-center bg-rose-950/20 border border-rose-500/20 p-2.5 rounded">
+                        <span class="text-rose-300 font-medium" id="lbl-resistances">نقاط المقاومة (Resistances):</span>
+                        <span class="font-mono font-bold text-rose-400" id="val-resistances">R1: 192.50 | R2: 201.86</span>
+                    </div>
                 </div>
             </div>
 
             <!-- Score Breakdown Table -->
-            <div class="overflow-x-auto mb-6">
+            <div class="overflow-x-auto">
                 <table class="w-full text-right border-collapse" id="main-table">
                     <thead>
                         <tr class="bg-gray-900/80 text-gray-400 text-xs uppercase border-b border-gray-700">
@@ -122,7 +153,7 @@
             </div>
 
             <!-- Highlighted Unachieved Conditions -->
-            <div class="bg-rose-950/20 border border-rose-500/30 rounded-lg p-4 mb-4">
+            <div class="bg-rose-950/20 border border-rose-500/30 rounded-lg p-4">
                 <h3 class="text-sm font-semibold text-rose-400 flex items-center gap-2 mb-2" id="missed-title">
                     ⚠️ الشروط غير المحققة (فارق -2.0 نقطة)
                 </h3>
@@ -132,25 +163,25 @@
                 </ul>
             </div>
 
-            <!-- Pattern Analysis Note (تحليل النماذج الأسبوعية واليومية) -->
-            <div class="bg-indigo-950/30 border border-indigo-500/30 rounded-lg p-4 mb-6">
+            <!-- Multi-Timeframe Pattern Analysis Note -->
+            <div class="bg-indigo-950/30 border border-indigo-500/30 rounded-lg p-4">
                 <h3 class="text-sm font-semibold text-indigo-300 flex items-center gap-2 mb-2" id="patterns-title">
                     🔍 تحليل النماذج الفنية (الفريم الأسبوعي واليومي)
                 </h3>
                 <ul class="list-disc list-inside text-xs text-indigo-200/90 space-y-2" id="patterns-list">
                     <li>
                         <strong class="text-indigo-400" id="pat-weekly-label">الفريم الأسبوعي (Weekly):</strong>
-                        <span id="pat-weekly-val">نموذج استمراري محتمل (Bull Flag / علم صاعد). الاتجاه الرئيسي صاعد، والتصحيح الحالي في نطاق ضيق يعكس تجميعاً هادئاً.</span>
+                        <span id="pat-weekly-val">نموذج استمراري محتمل (Bull Flag / علم صاعد). الاتجاه الرئيسي صاعد والتصحيح يعكس تجميعاً هادئاً.</span>
                     </li>
                     <li>
                         <strong class="text-indigo-400" id="pat-daily-label">الفريم اليومي (Daily):</strong>
-                        <span id="pat-daily-val">تكون قاع مزدوج محتمل (Potential Double Bottom) عند منطقة الدعم. في انتظار تأكيد اختراق خط العنق مع فوليوم مرتفع.</span>
+                        <span id="pat-daily-val">تكون قاع مزدوج محتمل (Double Bottom) عند دعم 183.00. في انتظار تأكيد اختراق خط العنق عند 192.50 ج.م.</span>
                     </li>
                 </ul>
             </div>
 
-            <!-- Footer Status -->
-            <div class="flex justify-between items-center bg-gray-900/60 p-4 rounded-lg border border-gray-700">
+            <!-- Footer Status & Action -->
+            <div class="flex justify-between items-center bg-gray-900/80 p-4 rounded-lg border border-gray-700">
                 <div>
                     <p class="text-xs text-gray-400" id="lbl-threshold">الحد الأدنى للتفعيل: <span class="text-gray-200 font-semibold">≥ 4.0 نقاط</span></p>
                     <p class="text-xs text-gray-400" id="lbl-score">النقاط الحالية: <span class="text-yellow-400 font-bold">3.0 نقاط</span></p>
@@ -175,6 +206,22 @@
             }
         }
 
+        // خاصية تصدير التقرير كصورة PNG
+        function exportReportAsImage() {
+            const reportElement = document.getElementById('report-card');
+            const ticker = document.getElementById('display-ticker').innerText;
+
+            html2canvas(reportElement, {
+                backgroundColor: '#1f2937', // خلفية داكنة تطابق الثيم
+                scale: 2 // جودة عالية
+            }).then(canvas => {
+                const link = document.createElement('a');
+                link.download = `${ticker}_Technical_Report.png`;
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+            });
+        }
+
         function toggleLanguage() {
             const html = document.getElementById('html-tag');
             const table = document.getElementById('main-table');
@@ -185,20 +232,30 @@
                 table.classList.remove('text-right');
                 table.classList.add('text-left');
                 
-                document.getElementById('stock-input').placeholder = "Enter ticker (e.g. EGYP, COMI)...";
+                document.getElementById('stock-input').placeholder = "Enter ticker (e.g. EGYP)...";
                 document.getElementById('btn-search').innerText = "Generate Report";
+                document.getElementById('btn-export-text').innerText = "Export as Image";
 
-                document.getElementById('title').innerText = "Technical Analysis Scorecard";
-                document.getElementById('label-strategy').innerText = "Strategy:";
+                document.getElementById('title').innerText = "Technical Analysis Report";
+                document.getElementById('label-strategy').innerText = "Active Strategy:";
                 document.getElementById('val-strategy').innerText = "Support Retest Evaluation";
                 document.getElementById('status-badge').innerText = "STATUS: WATCH (3.0 / 5.0)";
-                document.getElementById('tab-strat-a').innerText = "Strategy A";
-                document.getElementById('tab-breakout').innerText = "Resistance Breakout";
-                document.getElementById('tab-strat-b').innerText = "Strategy B (Active)";
-                document.getElementById('tab-retest').innerText = "Support Retest";
+
+                document.getElementById('lbl-entry').innerText = "Suggested Entry Zone";
+                document.getElementById('val-entry').innerText = "183.50 - 185.00 EGP";
+                document.getElementById('lbl-stop').innerText = "Stop Loss Level";
+                document.getElementById('val-stop').innerText = "178.00 EGP (Support Break)";
+                document.getElementById('lbl-ath').innerText = "All-Time High (ATH)";
+                document.getElementById('val-ath').innerText = "215.00 EGP";
+                document.getElementById('lbl-volume').innerText = "Session Volume";
+                document.getElementById('val-volume').innerText = "0.85x (Weak)";
+
+                document.getElementById('lbl-sr-title').innerText = "Key Support & Resistance Levels";
+                document.getElementById('lbl-supports').innerText = "Supports:";
+                document.getElementById('lbl-resistances').innerText = "Resistances:";
 
                 document.getElementById('th-param').innerText = "Parameter";
-                document.getElementById('th-target').innerText = "Support Retest Target";
+                document.getElementById('th-target').innerText = "Target Condition";
                 document.getElementById('th-current').innerText = "Current Value";
                 document.getElementById('th-status').innerText = "Status";
                 document.getElementById('th-points').innerText = "Points";
@@ -210,7 +267,7 @@
 
                 document.getElementById('r2-name').innerText = "Support Retest";
                 document.getElementById('r2-target').innerText = "Holding Key Support Zone";
-                document.getElementById('r2-val').innerText = "Retesting Support Level";
+                document.getElementById('r2-val').innerText = "Retesting 183.00 EGP";
                 document.getElementById('r2-status').innerText = "PASS";
 
                 document.getElementById('r3-name').innerText = "RSI Recovery";
@@ -238,7 +295,7 @@
                 document.getElementById('pat-weekly-label').innerText = "Weekly Timeframe:";
                 document.getElementById('pat-weekly-val').innerText = "Potential Continuation Pattern (Bull Flag). Primary trend remains bullish with low-volume consolidation.";
                 document.getElementById('pat-daily-label').innerText = "Daily Timeframe:";
-                document.getElementById('pat-daily-val').innerText = "Potential Double Bottom forming at key support. Awaiting neckline breakout with volume confirmation.";
+                document.getElementById('pat-daily-val').innerText = "Potential Double Bottom forming at 183.00 support. Awaiting neckline breakout at 192.50 EGP with volume confirmation.";
 
                 document.getElementById('lbl-threshold').innerHTML = 'Trigger Threshold: <span class="text-gray-200 font-semibold">≥ 4.0 Points</span>';
                 document.getElementById('lbl-score').innerHTML = 'Current Score: <span class="text-yellow-400 font-bold">3.0 Points</span>';
@@ -251,17 +308,27 @@
                 table.classList.remove('text-left');
                 table.classList.add('text-right');
                 
-                document.getElementById('stock-input').placeholder = "أدخل رمز أو اسم السهم (مثال: EGYP أو COMI)...";
+                document.getElementById('stock-input').placeholder = "أدخل رمز السهم...";
                 document.getElementById('btn-search').innerText = "عرض التقرير";
+                document.getElementById('btn-export-text').innerText = "تصدير التقرير كصورة";
 
-                document.getElementById('title').innerText = "تقرير التحليل الفني";
-                document.getElementById('label-strategy').innerText = "الاستراتيجية:";
+                document.getElementById('title').innerText = "تقرير التحليل الفني الشامل";
+                document.getElementById('label-strategy').innerText = "الاستراتيجية النشطة:";
                 document.getElementById('val-strategy').innerText = "تقييم إعادة اختبار الدعم";
                 document.getElementById('status-badge').innerText = "الحالة: مراقبة (3.0 / 5.0)";
-                document.getElementById('tab-strat-a').innerText = "استراتيجية أ";
-                document.getElementById('tab-breakout').innerText = "اختراق المقاومة";
-                document.getElementById('tab-strat-b').innerText = "استراتيجية ب (نشطة)";
-                document.getElementById('tab-retest').innerText = "إعادة اختبار الدعم";
+
+                document.getElementById('lbl-entry').innerText = "منطقة الدخول المقترحة";
+                document.getElementById('val-entry').innerText = "183.50 - 185.00 ج.م";
+                document.getElementById('lbl-stop').innerText = "وقف الخسارة (Stop Loss)";
+                document.getElementById('val-stop').innerText = "178.00 ج.م (كسر الدعم)";
+                document.getElementById('lbl-ath').innerText = "القمة التاريخية (ATH)";
+                document.getElementById('val-ath').innerText = "215.00 ج.م";
+                document.getElementById('lbl-volume').innerText = "حجم التداول (Volume)";
+                document.getElementById('val-volume').innerText = "0.85x (ضعيف)";
+
+                document.getElementById('lbl-sr-title').innerText = "مستويات الدعم والمقاومة الرئيسية";
+                document.getElementById('lbl-supports').innerText = "نقاط الدعم (Supports):";
+                document.getElementById('lbl-resistances').innerText = "نقاط المقاومة (Resistances):";
 
                 document.getElementById('th-param').innerText = "المؤشر / الشرط";
                 document.getElementById('th-target').innerText = "الهدف المطلوب";
@@ -276,7 +343,7 @@
 
                 document.getElementById('r2-name').innerText = "اختبار الدعم";
                 document.getElementById('r2-target').innerText = "الثبات فوق منطقة دعم رئيسية";
-                document.getElementById('r2-val').innerText = "اختبار دعم السهم";
+                document.getElementById('r2-val').innerText = "اختبار دعم 183.00 ج.م";
                 document.getElementById('r2-status').innerText = "مكتمل";
 
                 document.getElementById('r3-name').innerText = "ارتداد RSI";
@@ -302,9 +369,9 @@
 
                 document.getElementById('patterns-title').innerText = "🔍 تحليل النماذج الفنية (الفريم الأسبوعي واليومي)";
                 document.getElementById('pat-weekly-label').innerText = "الفريم الأسبوعي (Weekly):";
-                document.getElementById('pat-weekly-val').innerText = "نموذج استمراري محتمل (Bull Flag / علم صاعد). الاتجاه الرئيسي صاعد، والتصحيح الحالي في نطاق ضيق يعكس تجميعاً هادئاً.";
+                document.getElementById('pat-weekly-val').innerText = "نموذج استمراري محتمل (Bull Flag / علم صاعد). الاتجاه الرئيسي صاعد والتصحيح يعكس تجميعاً هادئاً.";
                 document.getElementById('pat-daily-label').innerText = "الفريم اليومي (Daily):";
-                document.getElementById('pat-daily-val').innerText = "تكون قاع مزدوج محتمل (Potential Double Bottom) عند منطقة الدعم. في انتظار تأكيد اختراق خط العنق مع فوليوم مرتفع.";
+                document.getElementById('pat-daily-val').innerText = "تكون قاع مزدوج محتمل (Double Bottom) عند دعم 183.00. في انتظار تأكيد اختراق خط العنق عند 192.50 ج.م.";
 
                 document.getElementById('lbl-threshold').innerHTML = 'الحد الأدنى للتفعيل: <span class="text-gray-200 font-semibold">≥ 4.0 نقاط</span>';
                 document.getElementById('lbl-score').innerHTML = 'النقاط الحالية: <span class="text-yellow-400 font-bold">3.0 نقاط</span>';
