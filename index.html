@@ -6,6 +6,8 @@
 <title>Medium-Term Stock Investment Analyzer</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;800&display=swap" rel="stylesheet">
+<!-- Chart.js CDN -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <style>
   :root[data-theme="dark"] {
     --bg: #0b0e14;
@@ -95,6 +97,10 @@
   .stat .lbl { font-size: 12.5px; color: var(--muted); margin-bottom: 6px; }
   .stat .val { font-size: 16px; font-weight: 800; }
 
+  .chart-container {
+    position: relative; height: 320px; width: 100%; margin-top: 15px;
+  }
+
   .levels { width: 100%; border-collapse: collapse; font-size: 15px; }
   .levels td { padding: 10px 6px; border-bottom: 1px solid var(--line); }
   .levels tr:last-child td { border-bottom: none; }
@@ -174,6 +180,14 @@
       </div>
     </div>
 
+    <!-- Simplified Key Structure Visual Chart -->
+    <div class="card">
+      <h2>📉 Price Structure & Key Levels Visualization</h2>
+      <div class="chart-container">
+        <canvas id="priceStructureChart"></canvas>
+      </div>
+    </div>
+
     <!-- Technical Indicators & Key Structural Levels Panel -->
     <div class="card">
       <h2>⚙️ Key Structural Levels & Technical Indicators</h2>
@@ -222,6 +236,7 @@
 
 <script>
 let currentData = null;
+let chartInstance = null;
 
 const $ = id => document.getElementById(id);
 const fmt = n => (n === null || n === undefined || isNaN(n) || !isFinite(n)) ? '--' : n.toFixed(2);
@@ -252,7 +267,7 @@ async function fetchTradingViewData(ticker) {
   const tvUrl = "https://scanner.tradingview.com/egypt/scan";
   
   // REPLACE WITH YOUR CLOUDFLARE WORKER URL:
-  const workerProxy = "https://my-stock-proxy.amr7-elsherif.workers.dev/"; 
+  const workerProxy = "https://my-stock-proxy.amr7-elsherif.workers.dev"; 
   const proxyEndpoint = `${workerProxy}/?url=${encodeURIComponent(tvUrl)}`;
 
   const payload = {
@@ -352,14 +367,12 @@ $('applyManual').addEventListener('click', () => {
   setStatus('✅ Report calculated using manual inputs.');
 });
 
-// SMART MULTI-FACTOR TECHNICAL ANALYSIS LOGIC WITH SUPPORT & RESISTANCE
 function computeAnalysis(d) {
   const { close, prevClose, volume, avgVolume, ema20, ema50, ema200, rsi, macd, macdSignal } = d;
 
   const pct = prevClose ? ((close - prevClose) / prevClose * 100) : 0;
   const rvol = avgVolume > 0 ? (volume / avgVolume) : 1;
 
-  // Main Support & Resistance Calculation Logic
   let mainSupport = Math.min(ema20, ema50);
   if (close > ema200 && ema200 > 0) {
     mainSupport = Math.min(ema20, ema50, ema200);
@@ -372,17 +385,14 @@ function computeAnalysis(d) {
     mainResistance = close * 1.08; 
   }
 
-  // Multi-Factor Conditions
   const isAboveStructuralBase = close >= ema200;
   const isAboveShortTrend = close >= ema20;
   const isMacdBullish = macd >= macdSignal;
   const isRsiHealthy = rsi >= 50 && rsi < 70; 
   const isVolumeSupported = rvol >= 1.30;
 
-  // Dynamic Trigger Point Calculation (Breakout clear of Main Resistance)
   const triggerPointPrice = Math.max(mainResistance * 0.995, close * 1.01); 
 
-  // Multi-Factor Smart Score (out of 5)
   let smartScore = 0;
   if (isAboveStructuralBase) smartScore++;
   if (isAboveShortTrend) smartScore++;
@@ -425,6 +435,70 @@ function computeAnalysis(d) {
   };
 }
 
+function renderChart(d, a) {
+  const ctx = $('priceStructureChart').getContext('2d');
+  
+  if (chartInstance) {
+    chartInstance.destroy();
+  }
+
+  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+  const textColor = isDark ? '#f0f3f8' : '#0f172a';
+  const gridColor = isDark ? '#2a3347' : '#cbd5e1';
+
+  chartInstance = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: ['Main Support', 'EMA 200', 'EMA 50', 'EMA 20', 'Current Price', 'Trigger Point', 'Main Resistance'],
+      datasets: [{
+        label: 'Price Level (EGP)',
+        data: [
+          a.mainSupport,
+          d.ema200,
+          d.ema50,
+          d.ema20,
+          d.close,
+          a.triggerPointPrice,
+          a.mainResistance
+        ],
+        backgroundColor: [
+          '#26a69a', // Support (Green)
+          '#848e9c', // EMA 200 (Muted)
+          '#ffb74d', // EMA 50 (Amber)
+          '#3b82f6', // EMA 20 (Blue)
+          '#ffffff', // Current Close (White)
+          '#2962ff', // Trigger Point (Accent Blue)
+          '#ef5350'  // Resistance (Red)
+        ],
+        borderRadius: 8,
+        barThickness: 32
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: (ctx) => `${ctx.raw.toFixed(2)} EGP`
+          }
+        }
+      },
+      scales: {
+        x: {
+          grid: { color: 'transparent' },
+          ticks: { color: textColor, font: { family: 'Inter', weight: '600' } }
+        },
+        y: {
+          grid: { color: gridColor },
+          ticks: { color: textColor, font: { family: 'Inter' } }
+        }
+      }
+    }
+  });
+}
+
 function render(d) {
   $('report').classList.remove('hidden');
   const a = computeAnalysis(d);
@@ -446,6 +520,8 @@ function render(d) {
   const sStat = $('outSmartTrigger');
   sStat.textContent = a.isFullTriggerConfirmed ? `🔥 TRIGGERED (${a.smartScore}/5)` : `⏳ PENDING (${a.smartScore}/5)`;
   sStat.style.color = a.isFullTriggerConfirmed ? 'var(--green)' : 'var(--amber)';
+
+  renderChart(d, a);
 
   $('valMainResist').textContent = `${fmt(a.mainResistance)} EGP`;
   $('valMainSupp').textContent = `${fmt(a.mainSupport)} EGP`;
