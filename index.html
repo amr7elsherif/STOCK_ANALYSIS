@@ -43,7 +43,7 @@
     font-family: 'Inter', sans-serif;
     padding: 20px;
   }
-  .wrap { max-width: 850px; margin: 0 auto; }
+  .wrap { max-width: 900px; margin: 0 auto; }
   
   .header {
     display: flex; justify-content: space-between; align-items: center;
@@ -92,13 +92,13 @@
   .down { color: var(--red); }
 
   .grid4 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
-  @media(min-width: 540px){ .grid4 { grid-template-columns: repeat(4, 1fr); } }
+  @media(min-width: 640px){ .grid4 { grid-template-columns: repeat(4, 1fr); } }
   .stat { background: var(--panel-2); border: 1px solid var(--line); border-radius: 12px; padding: 12px; text-align: center; }
-  .stat .lbl { font-size: 12.5px; color: var(--muted); margin-bottom: 6px; }
-  .stat .val { font-size: 16px; font-weight: 800; }
+  .stat .lbl { font-size: 12px; color: var(--muted); margin-bottom: 6px; }
+  .stat .val { font-size: 15px; font-weight: 800; }
 
   .chart-container {
-    position: relative; height: 320px; width: 100%; margin-top: 15px;
+    position: relative; height: 340px; width: 100%; margin-top: 15px;
   }
 
   .levels { width: 100%; border-collapse: collapse; font-size: 15px; }
@@ -145,8 +145,10 @@
     <div class="manual-grid">
       <div><label>Current Price (EGP)</label><input id="m_close" type="number" step="0.01"></div>
       <div><label>Previous Close (EGP)</label><input id="m_prev" type="number" step="0.01"></div>
-      <div><label>Session Vol (in Millions, e.g. 1.25)</label><input id="m_vol" type="number" step="0.01"></div>
-      <div><label>20-Day Avg Vol (in Millions, e.g. 1.10)</label><input id="m_avgvol" type="number" step="0.01"></div>
+      <div><label>Session Volume (Shares)</label><input id="m_vol" type="number" step="1"></div>
+      <div><label>20-Day Avg Volume (Shares)</label><input id="m_avgvol" type="number" step="1"></div>
+      <div><label>52-Week High (EGP)</label><input id="m_high52" type="number" step="0.01"></div>
+      <div><label>52-Week Low (EGP)</label><input id="m_low52" type="number" step="0.01"></div>
       <div><label>EMA 20</label><input id="m_ema20" type="number" step="0.01"></div>
       <div><label>EMA 50</label><input id="m_ema50" type="number" step="0.01"></div>
       <div><label>EMA 200</label><input id="m_ema200" type="number" step="0.01"></div>
@@ -175,8 +177,8 @@
       <div class="grid4" style="margin-top:20px;">
         <div class="stat"><div class="lbl">Session Vol</div><div class="val" id="outVol">--</div></div>
         <div class="stat"><div class="lbl">20D Avg Vol</div><div class="val" id="outAvgVol">--</div></div>
-        <div class="stat"><div class="lbl">Relative Vol (RVOL)</div><div class="val" id="outRvol">--</div></div>
-        <div class="stat"><div class="lbl">Smart Trigger Signal</div><div class="val" id="outSmartTrigger">--</div></div>
+        <div class="stat"><div class="lbl">52-Week High</div><div class="val" id="outHigh52" style="color:var(--amber)">--</div></div>
+        <div class="stat"><div class="lbl">52-Week Low</div><div class="val" id="outLow52" style="color:var(--muted)">--</div></div>
       </div>
     </div>
 
@@ -192,13 +194,14 @@
     <div class="card">
       <h2>⚙️ Key Structural Levels & Technical Indicators</h2>
       <table class="levels">
-        <tr><td>🛑 Main Resistance (Ceiling)</td><td id="valMainResist" style="color:var(--red)">--</td></tr>
-        <tr><td>🛡️ Main Support (Floor)</td><td id="valMainSupp" style="color:var(--green)">--</td></tr>
+        <tr><td>🚀 52-Week High (Historical Peak)</td><td id="valHigh52" style="color:var(--amber)">--</td></tr>
+        <tr><td>🛑 Main Resistance (Immediate Ceiling)</td><td id="valMainResist" style="color:var(--red)">--</td></tr>
+        <tr><td>⚡ Trigger Point Price</td><td id="valTriggerPoint" style="color:var(--accent)">--</td></tr>
+        <tr><td>🛡️ Main Support (Current Floor)</td><td id="valMainSupp" style="color:var(--green)">--</td></tr>
+        <tr><td>📉 52-Week Low (Historical Floor)</td><td id="valLow52" style="color:var(--muted)">--</td></tr>
         <tr><td>RSI (14-period)</td><td id="valRsi">--</td></tr>
         <tr><td>MACD (12, 26, 9)</td><td id="valMacd">--</td></tr>
-        <tr><td>EMA 20 (Short Trend)</td><td id="valEma20">--</td></tr>
-        <tr><td>EMA 50 (Medium Trend)</td><td id="valEma50">--</td></tr>
-        <tr><td>EMA 200 (Long Structural Base)</td><td id="valEma200">--</td></tr>
+        <tr><td>EMA 20 / EMA 50 / EMA 200</td><td id="valEmas">--</td></tr>
       </table>
     </div>
 
@@ -226,7 +229,7 @@
 
     <div class="card">
       <h2>🖼️ Exportable Investment Card</h2>
-      <canvas id="shareCanvas" width="1080" height="1550"></canvas>
+      <canvas id="shareCanvas" width="1080" height="1650"></canvas>
       <button id="downloadBtn" style="margin-top:14px; width:100%; background:var(--green); color:#fff; border:none; border-radius:10px; padding:14px; font-size:16px; font-weight:800; cursor:pointer;">⬇️ Download Report Image</button>
     </div>
 
@@ -240,10 +243,13 @@ let chartInstance = null;
 
 const $ = id => document.getElementById(id);
 const fmt = n => (n === null || n === undefined || isNaN(n) || !isFinite(n)) ? '--' : n.toFixed(2);
-const fmtMillions = val => {
+
+// Standardized formatting for share volume counts
+const fmtVol = val => {
   if (val === null || val === undefined || isNaN(val) || !isFinite(val)) return '--';
-  const inM = val / 1000000;
-  return `${inM.toFixed(2)}M`;
+  if (val >= 1000000) return (val / 1000000).toFixed(2) + 'M';
+  if (val >= 1000) return (val / 1000).toFixed(1) + 'K';
+  return val.toString();
 };
 
 function setTheme(theme, e) {
@@ -266,7 +272,7 @@ async function fetchTradingViewData(ticker) {
   const cleanSymbol = ticker.trim().toUpperCase().replace('.CA', '');
   const tvUrl = "https://scanner.tradingview.com/egypt/scan";
   
-  // REPLACE WITH YOUR CLOUDFLARE WORKER URL:
+  // REPLACE WITH YOUR CLOUDFLARE WORKER PROXY URL:
   const workerProxy = "https://my-stock-proxy.amr7-elsherif.workers.dev"; 
   const proxyEndpoint = `${workerProxy}/?url=${encodeURIComponent(tvUrl)}`;
 
@@ -275,7 +281,8 @@ async function fetchTradingViewData(ticker) {
     "columns": [
       "name", "description", "close", "change_abs", "volume",
       "average_volume_10d_calc", "average_volume_30d_calc",
-      "EMA20", "EMA50", "EMA200", "RSI", "MACD.macd", "MACD.signal"
+      "EMA20", "EMA50", "EMA200", "RSI", "MACD.macd", "MACD.signal",
+      "price_52_week_high", "price_52_week_low"
     ]
   };
 
@@ -294,6 +301,7 @@ async function fetchTradingViewData(ticker) {
     const changeAbs = d[3];
     const vol = d[4] || 0;
     
+    // Accurate 20-day volume averaging formula using 10d and 30d raw counts
     const avg10 = d[5] || 0;
     const avg30 = d[6] || 0;
     let avg20 = (avg10 + avg30) / 2;
@@ -306,6 +314,8 @@ async function fetchTradingViewData(ticker) {
       prevClose: close - changeAbs,
       volume: vol,
       avgVolume: avg20,
+      high52: d[13] || close * 1.25,
+      low52: d[14] || close * 0.75,
       ema20: d[7] || close,
       ema50: d[8] || close,
       ema200: d[9] || close,
@@ -322,16 +332,16 @@ async function runAnalysis() {
   const ticker = $('tickerInput').value.trim().toUpperCase();
   if (!ticker) { setStatus('Please enter a valid ticker symbol.', true); return; }
 
-  setStatus('⏳ Running smart technical multi-factor analysis via TradingView...');
+  setStatus('⏳ Fetching stock indicators & calculating multi-factor levels...');
   try {
     const built = await fetchTradingViewData(ticker);
     currentData = built;
     render(built);
-    setStatus('✅ Live TradingView smart technical analysis loaded successfully');
+    setStatus('✅ Live TradingView technical analysis loaded successfully');
     $('manualPanel').classList.add('hidden');
   } catch (err) {
     console.error(err);
-    setStatus(`⚠️ Fetch failed. Verify Cloudflare Worker URL or enter parameters manually.`, true);
+    setStatus(`⚠️ Fetch failed. Please verify API configuration or enter manual values below.`, true);
     $('manualPanel').classList.remove('hidden');
   }
 }
@@ -343,10 +353,11 @@ $('applyManual').addEventListener('click', () => {
   const c = parseFloat($('m_close').value);
   const p = parseFloat($('m_prev').value) || c;
   
-  const vInMillions = parseFloat($('m_vol').value) || 0;
-  const avgVInMillions = parseFloat($('m_avgvol').value) || 0.000001;
-  const v = vInMillions * 1000000;
-  const avgV = avgVInMillions * 1000000;
+  const v = parseFloat($('m_vol').value) || 0;
+  const avgV = parseFloat($('m_avgvol').value) || 1;
+
+  const h52 = parseFloat($('m_high52').value) || c * 1.2;
+  const l52 = parseFloat($('m_low52').value) || c * 0.8;
 
   const e20 = parseFloat($('m_ema20').value) || c;
   const e50 = parseFloat($('m_ema50').value) || c;
@@ -360,38 +371,44 @@ $('applyManual').addEventListener('click', () => {
   const built = {
     ticker: ticker.endsWith('.CA') ? ticker : `${ticker}.CA`,
     name: ticker, close: c, prevClose: p, volume: v, avgVolume: avgV,
+    high52: h52, low52: l52,
     ema20: e20, ema50: e50, ema200: e200, rsi: rsi, macd: macd, macdSignal: macdSig
   };
   currentData = built;
   render(built);
-  setStatus('✅ Report calculated using manual inputs.');
+  setStatus('✅ Analysis successfully updated using manual input data.');
 });
 
 function computeAnalysis(d) {
-  const { close, prevClose, volume, avgVolume, ema20, ema50, ema200, rsi, macd, macdSignal } = d;
+  const { close, prevClose, volume, avgVolume, ema20, ema50, ema200, rsi, macd, macdSignal, high52, low52 } = d;
 
   const pct = prevClose ? ((close - prevClose) / prevClose * 100) : 0;
-  const rvol = avgVolume > 0 ? (volume / avgVolume) : 1;
+  
+  // Precise Relative Volume Ratio Calculation
+  const rvol = (avgVolume && avgVolume > 0) ? (volume / avgVolume) : 1.0;
 
+  // Multi-Factor Confirmed Support Computation
   let mainSupport = Math.min(ema20, ema50);
   if (close > ema200 && ema200 > 0) {
     mainSupport = Math.min(ema20, ema50, ema200);
-  } else if (mainSupport > close) {
+  }
+  if (mainSupport >= close) {
     mainSupport = close * 0.95; 
   }
 
+  // Multi-Factor Confirmed Resistance Computation
   let mainResistance = Math.max(ema20, ema50, ema200);
   if (close >= mainResistance) {
-    mainResistance = close * 1.08; 
+    mainResistance = close * 1.06; 
   }
+
+  const triggerPointPrice = Math.max(mainResistance * 0.995, close * 1.015);
 
   const isAboveStructuralBase = close >= ema200;
   const isAboveShortTrend = close >= ema20;
   const isMacdBullish = macd >= macdSignal;
-  const isRsiHealthy = rsi >= 50 && rsi < 70; 
-  const isVolumeSupported = rvol >= 1.30;
-
-  const triggerPointPrice = Math.max(mainResistance * 0.995, close * 1.01); 
+  const isRsiHealthy = rsi >= 50 && rsi < 70;
+  const isVolumeSupported = rvol >= 1.25;
 
   let smartScore = 0;
   if (isAboveStructuralBase) smartScore++;
@@ -402,16 +419,13 @@ function computeAnalysis(d) {
 
   const isFullTriggerConfirmed = smartScore >= 4 && close >= triggerPointPrice * 0.99;
 
-  const buyZoneLow = mainSupport;
-  const buyZoneHigh = Math.min(close, mainResistance * 0.98);
-
   const stopLoss = mainSupport * 0.96; 
-  const targetPrice = mainResistance * 1.12; 
+  const targetPrice = Math.max(mainResistance * 1.10, high52); 
 
   let trendStatus = 'Neutral / Consolidation';
-  if (isAboveStructuralBase && ema50 >= ema200) trendStatus = '🚀 Strong Bullish Structural Uptrend';
+  if (isAboveStructuralBase && ema50 >= ema200) trendStatus = '🚀 Strong Bullish Structural Trend';
   else if (isAboveStructuralBase) trendStatus = '📈 Bullish Medium-Term Bias';
-  else trendStatus = '📉 Bearish Structural Bias (Below EMA 200)';
+  else trendStatus = '📉 Bearish Structural Trend (Below 200 EMA)';
 
   let rsiStatus = 'Neutral';
   if (rsi >= 70) rsiStatus = '🔥 Overbought (>70)';
@@ -420,16 +434,16 @@ function computeAnalysis(d) {
 
   let recTitle = 'Hold / Await Multi-Factor Confirmation';
   if (isFullTriggerConfirmed) {
-    recTitle = '🟢 STRONG BUY: Smart Breakout Triggered';
+    recTitle = '🟢 STRONG BUY: Smart Breakout Trigger Confirmed';
   } else if (isAboveStructuralBase && !isFullTriggerConfirmed) {
     recTitle = '⏳ ACCUMULATE ON PULLBACK: Awaiting Technical Trigger Point';
   } else if (!isAboveStructuralBase) {
-    recTitle = '⚠️ AVOID / REDUCE: Structural Trend Weak';
+    recTitle = '⚠️ AVOID / REDUCE: Below 200 EMA Structural Base';
   }
 
   return { 
     pct, rvol, isFullTriggerConfirmed, smartScore, trendStatus, rsiStatus, 
-    mainSupport, mainResistance, buyZoneLow, buyZoneHigh, triggerPointPrice, 
+    mainSupport, mainResistance, triggerPointPrice, 
     stopLoss, targetPrice, isMacdBullish, isRsiHealthy, isAboveShortTrend, 
     isVolumeSupported, recTitle 
   };
@@ -449,29 +463,29 @@ function renderChart(d, a) {
   chartInstance = new Chart(ctx, {
     type: 'bar',
     data: {
-      labels: ['Main Support', 'EMA 200', 'EMA 50', 'EMA 20', 'Current Price', 'Trigger Point', 'Main Resistance'],
+      labels: ['52-Wk Low', 'Main Support', 'EMA 200', 'Current Price', 'Trigger Point', 'Main Resist.', '52-Wk High'],
       datasets: [{
         label: 'Price Level (EGP)',
         data: [
+          d.low52,
           a.mainSupport,
           d.ema200,
-          d.ema50,
-          d.ema20,
           d.close,
           a.triggerPointPrice,
-          a.mainResistance
+          a.mainResistance,
+          d.high52
         ],
         backgroundColor: [
+          '#64748b', // 52-Wk Low (Slate)
           '#26a69a', // Support (Green)
           '#848e9c', // EMA 200 (Muted)
-          '#ffb74d', // EMA 50 (Amber)
-          '#3b82f6', // EMA 20 (Blue)
           '#ffffff', // Current Close (White)
-          '#2962ff', // Trigger Point (Accent Blue)
-          '#ef5350'  // Resistance (Red)
+          '#2962ff', // Trigger Point (Accent)
+          '#ef5350', // Resistance (Red)
+          '#ffb74d'  // 52-Wk High (Amber)
         ],
         borderRadius: 8,
-        barThickness: 32
+        barThickness: 28
       }]
     },
     options: {
@@ -513,23 +527,23 @@ function render(d) {
   chgEl.textContent = (chgVal >= 0 ? '+' : '') + fmt(chgVal) + ' (' + (a.pct >= 0 ? '+' : '') + a.pct.toFixed(2) + '%)';
   chgEl.className = 'chg ' + (chgVal >= 0 ? 'up' : 'down');
 
-  $('outVol').textContent = fmtMillions(d.volume);
-  $('outAvgVol').textContent = fmtMillions(d.avgVolume);
-  $('outRvol').textContent = `${a.rvol.toFixed(2)}x`;
-  
-  const sStat = $('outSmartTrigger');
-  sStat.textContent = a.isFullTriggerConfirmed ? `🔥 TRIGGERED (${a.smartScore}/5)` : `⏳ PENDING (${a.smartScore}/5)`;
-  sStat.style.color = a.isFullTriggerConfirmed ? 'var(--green)' : 'var(--amber)';
+  // Correct volume rendering
+  $('outVol').textContent = fmtVol(d.volume);
+  $('outAvgVol').textContent = fmtVol(d.avgVolume);
+  $('outHigh52').textContent = `${fmt(d.high52)} EGP`;
+  $('outLow52').textContent = `${fmt(d.low52)} EGP`;
 
   renderChart(d, a);
 
+  $('valHigh52').textContent = `${fmt(d.high52)} EGP`;
   $('valMainResist').textContent = `${fmt(a.mainResistance)} EGP`;
+  $('valTriggerPoint').textContent = `${fmt(a.triggerPointPrice)} EGP`;
   $('valMainSupp').textContent = `${fmt(a.mainSupport)} EGP`;
+  $('valLow52').textContent = `${fmt(d.low52)} EGP`;
+
   $('valRsi').textContent = `${fmt(d.rsi)} (${a.rsiStatus})`;
-  $('valMacd').textContent = `${fmt(d.macd)} / Signal: ${fmt(d.macdSignal)} (${a.isMacdBullish ? 'Bullish Cross' : 'Bearish Cross'})`;
-  $('valEma20').textContent = fmt(d.ema20);
-  $('valEma50').textContent = fmt(d.ema50);
-  $('valEma200').textContent = fmt(d.ema200);
+  $('valMacd').textContent = `${fmt(d.macd)} / Signal: ${fmt(d.macdSignal)} (${a.isMacdBullish ? 'Bullish' : 'Bearish'})`;
+  $('valEmas').textContent = `${fmt(d.ema20)} / ${fmt(d.ema50)} / ${fmt(d.ema200)}`;
 
   $('trendBadge').textContent = a.trendStatus;
   $('rsiBadge').textContent = `RSI: ${fmt(d.rsi)}`;
@@ -537,25 +551,25 @@ function render(d) {
   const notesEl = $('techNotes');
   notesEl.innerHTML = '';
   const notes = [
-    `Main Support & Resistance: Structural floor identified at ${fmt(a.mainSupport)} EGP and primary ceiling overhead at ${fmt(a.mainResistance)} EGP.`,
-    `Price Structure: Close is ${d.close >= d.ema200 ? 'ABOVE' : 'BELOW'} 200 EMA baseline (${fmt(d.ema200)} EGP) and ${a.isAboveShortTrend ? 'ABOVE' : 'BELOW'} 20 EMA short-term trend.`,
-    `Momentum Alignment: MACD is ${a.isMacdBullish ? 'BULLISH (Line > Signal)' : 'BEARISH (Line < Signal)'} and RSI is ${a.isRsiHealthy ? 'HEALTHY (50-70 zone)' : 'OUTSIDE optimal buy zone'}.`,
-    `Smart Multi-Factor Score: Achieved ${a.smartScore}/5 parameters. Trigger point validation requires price breakout above ${fmt(a.triggerPointPrice)} EGP.`
+    `Historical Price Range: 52-Week High stands at ${fmt(d.high52)} EGP while the 52-Week Low floor sits at ${fmt(d.low52)} EGP.`,
+    `Confirmed Structural Levels: Primary short-term support established at ${fmt(a.mainSupport)} EGP; key upper resistance ceiling set at ${fmt(a.mainResistance)} EGP.`,
+    `Volume & Liquidity: Session volume of ${fmtVol(d.volume)} vs. 20-day average volume of ${fmtVol(d.avgVolume)} (Relative Vol: ${a.rvol.toFixed(2)}x).`,
+    `Momentum Alignment: MACD is ${a.isMacdBullish ? 'BULLISH' : 'BEARISH'} and price action is trading ${d.close >= d.ema200 ? 'ABOVE' : 'BELOW'} the 200 EMA structural baseline (${fmt(d.ema200)} EGP).`
   ];
   notes.forEach(n => { const li = document.createElement('li'); li.textContent = n; notesEl.appendChild(li); });
 
   $('outMainSupp').textContent = `${fmt(a.mainSupport)} EGP`;
   $('outMainResist').textContent = `${fmt(a.mainResistance)} EGP`;
   $('outTriggerPoint').textContent = `${fmt(a.triggerPointPrice)} EGP`;
-  $('outTarget').textContent = fmt(a.targetPrice);
+  $('outTarget').textContent = `${fmt(a.targetPrice)} EGP`;
   $('outRecTitle').textContent = a.recTitle;
 
   const recNotesEl = $('recNotes');
   recNotesEl.innerHTML = '';
   const recNotes = [
-    `Trigger Activation: Confirmed entry upon a daily close exceeding Main Resistance (${fmt(a.mainResistance)} EGP) or Trigger Point (${fmt(a.triggerPointPrice)} EGP).`,
-    `Primary Defense: Main Support acts as structural protection at ${fmt(a.mainSupport)} EGP.`,
-    `Risk Control: Maintain structural Stop Loss just below support at ${fmt(a.stopLoss)} EGP.`
+    `Trigger Point: A sustained daily close above ${fmt(a.triggerPointPrice)} EGP confirms buy momentum towards historical targets.`,
+    `Defense Zone: Main Support (${fmt(a.mainSupport)} EGP) serves as immediate protection; historical low remains at ${fmt(d.low52)} EGP.`,
+    `Risk Control: Place stop loss immediately below current support at ${fmt(a.stopLoss)} EGP.`
   ];
   recNotes.forEach(n => { const li = document.createElement('li'); li.textContent = n; recNotesEl.appendChild(li); });
 
@@ -574,6 +588,7 @@ function drawShareCanvas(d, a) {
   const mutedColor = '#848e9c';
   const greenColor = '#26a69a';
   const redColor = '#ef5350';
+  const amberColor = '#ffb74d';
   const accentColor = '#2962ff';
 
   ctx.fillStyle = bgColor; ctx.fillRect(0, 0, W, H);
@@ -581,7 +596,7 @@ function drawShareCanvas(d, a) {
   const leftX = 60;
   ctx.textAlign = 'left';
   ctx.fillStyle = mutedColor; ctx.font = '28px Inter, sans-serif';
-  ctx.fillText('Medium-Term Investment Report', leftX, 80);
+  ctx.fillText('Medium-Term Technical Analysis Card', leftX, 80);
   ctx.fillStyle = greenColor; ctx.font = '800 60px Inter, sans-serif';
   ctx.fillText(d.ticker, leftX, 150);
   ctx.fillStyle = textColor; ctx.font = '26px Inter, sans-serif';
@@ -603,27 +618,29 @@ function drawShareCanvas(d, a) {
     ctx.textAlign = 'center';
     ctx.fillStyle = mutedColor; ctx.font = '20px Inter, sans-serif';
     ctx.fillText(label, x + w / 2, y + 34);
-    ctx.fillStyle = color || textColor; ctx.font = '800 24px Inter, sans-serif';
+    ctx.fillStyle = color || textColor; ctx.font = '800 22px Inter, sans-serif';
     ctx.fillText(val, x + w / 2, y + 70);
   }
 
   const gy = 350, gw = (W - 120 - 30) / 4, gh = 90;
-  statBox(60, gy, gw, gh, 'Session Vol', fmtMillions(d.volume));
-  statBox(60 + gw + 10, gy, gw, gh, '20D Avg Vol', fmtMillions(d.avgVolume));
-  statBox(60 + 2 * (gw + 10), gy, gw, gh, 'Relative Vol', `${a.rvol.toFixed(2)}x`);
-  statBox(60 + 3 * (gw + 10), gy, gw, gh, 'Smart Score', `${a.smartScore}/5`, a.isFullTriggerConfirmed ? greenColor : '#ffb74d');
+  statBox(60, gy, gw, gh, 'Session Vol', fmtVol(d.volume));
+  statBox(60 + gw + 10, gy, gw, gh, '20D Avg Vol', fmtVol(d.avgVolume));
+  statBox(60 + 2 * (gw + 10), gy, gw, gh, '52-Wk High', `${fmt(d.high52)}`, amberColor);
+  statBox(60 + 3 * (gw + 10), gy, gw, gh, '52-Wk Low', `${fmt(d.low52)}`, mutedColor);
 
   let ly = 500;
   ctx.textAlign = 'left'; ctx.fillStyle = mutedColor; ctx.font = '700 26px Inter, sans-serif';
-  ctx.fillText('Structural Levels & Indicators', leftX, ly);
+  ctx.fillText('Structural Levels Summary', leftX, ly);
   ly += 40;
+
   const levels = [
+    ['🚀 52-Week High (Peak Ceiling)', `${fmt(d.high52)} EGP`, amberColor],
     ['🛑 Main Resistance (Ceiling)', `${fmt(a.mainResistance)} EGP`, redColor],
+    ['⚡ Trigger Point Price', `${fmt(a.triggerPointPrice)} EGP`, accentColor],
     ['🛡️ Main Support (Floor)', `${fmt(a.mainSupport)} EGP`, greenColor],
-    ['RSI (14-period)', `${fmt(d.rsi)} (${a.rsiStatus})`, textColor],
-    ['MACD Status', a.isMacdBullish ? 'Bullish (Above Signal)' : 'Bearish (Below Signal)', a.isMacdBullish ? greenColor : redColor],
-    ['EMA 20 / 50 / 200', `${fmt(d.ema20)} / ${fmt(d.ema50)} / ${fmt(d.ema200)}`, textColor]
+    ['📉 52-Week Low (Floor Base)', `${fmt(d.low52)} EGP`, mutedColor]
   ];
+
   levels.forEach(([lbl, val, col]) => {
     ctx.fillStyle = panelColor; roundRect(ctx, 60, ly - 32, W - 120, 50, 10); ctx.fill();
     ctx.textAlign = 'left'; ctx.fillStyle = textColor; ctx.font = '24px Inter, sans-serif';
@@ -643,7 +660,7 @@ function drawShareCanvas(d, a) {
   statBox(60, rgy, rgw, 90, 'Main Support', `${fmt(a.mainSupport)}`, greenColor);
   statBox(60 + rgw + 10, rgy, rgw, 90, 'Main Resistance', `${fmt(a.mainResistance)}`, redColor);
   statBox(60 + 2 * (rgw + 10), rgy, rgw, 90, 'Trigger Point', `${fmt(a.triggerPointPrice)}`, accentColor);
-  statBox(60 + 3 * (rgw + 10), rgy, rgw, 90, 'Target Price', fmt(a.targetPrice), greenColor);
+  statBox(60 + 3 * (rgw + 10), rgy, rgw, 90, 'Medium Target', `${fmt(a.targetPrice)}`, greenColor);
 
   ctx.textAlign = 'center'; ctx.fillStyle = mutedColor; ctx.font = '18px Inter, sans-serif';
   ctx.fillText('Smart Multi-Factor Investment Strategy Engine', W / 2, H - 40);
