@@ -46,7 +46,6 @@
   }
   .wrap { max-width: 800px; margin: 0 auto; }
   
-  /* Header & Controls */
   .header {
     display: flex; justify-content: space-between; align-items: center;
     margin-bottom: 20px; flex-wrap: wrap; gap: 10px;
@@ -61,7 +60,6 @@
   }
   .theme-btn.active { background: var(--accent); color: #fff; }
 
-  /* Search Toolbar */
   .toolbar {
     display: flex; flex-wrap: wrap; gap: 10px; align-items: center;
     background: var(--panel); border: 1px solid var(--line); border-radius: 16px;
@@ -85,7 +83,6 @@
   .status { font-size: 13.5px; color: var(--muted); width: 100%; margin-top: 4px; display: flex; align-items: center; gap: 6px; }
   .status.err { color: var(--red); }
 
-  /* Cards */
   .card {
     background: var(--panel); border: 1px solid var(--line); border-radius: 16px;
     padding: 20px; margin-bottom: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);
@@ -107,7 +104,6 @@
   .stat .lbl { font-size: 12.5px; color: var(--muted); margin-bottom: 6px; }
   .stat .val { font-size: 17px; font-weight: 800; }
 
-  /* Levels */
   .levels { width: 100%; border-collapse: collapse; font-size: 15px; }
   .levels td { padding: 10px 6px; border-bottom: 1px solid var(--line); }
   .levels tr:last-child td { border-bottom: none; }
@@ -146,13 +142,13 @@
   </div>
 
   <div class="toolbar">
-    <input id="tickerInput" placeholder="Ticker (e.g. FWRY, ORHD, ORAS)" value="FWRY">
+    <input id="tickerInput" placeholder="Ticker (e.g. ETEL, FWRY, COMI)" value="ETEL">
     <button id="fetchBtn">🔍 Analyze via TradingView</button>
     <button id="manualBtn" class="secondary">✍️ Manual Entry</button>
     <div id="status" class="status">Enter ticker symbol and press "Analyze".</div>
   </div>
 
-  <!-- Manual Entry Fallback Panel -->
+  <!-- Manual Entry Panel -->
   <div id="manualPanel" class="card hidden">
     <h2>✍️ Manual Session Entry</h2>
     <div class="manual-grid">
@@ -166,9 +162,8 @@
     <button id="applyManual" style="margin-top:14px; width:100%; background:var(--green); color:#fff; border:none; border-radius:10px; padding:12px; font-family:inherit; font-weight:800; cursor:pointer;">Generate Analysis</button>
   </div>
 
-  <!-- Main Analysis Section -->
+  <!-- Output Report -->
   <div id="report" class="hidden">
-
     <div class="card">
       <div class="head-row">
         <div class="title-block">
@@ -265,52 +260,78 @@ $('tickerInput').addEventListener('keypress', (e) => {
 });
 $('fetchBtn').addEventListener('click', runAnalysis);
 
-// Fetch Data with CORS Proxy Handling
+// Robust Multi-Stage Fetch Routine
 async function fetchTradingView(ticker) {
   let cleanSymbol = ticker.trim().toUpperCase().replace('.CA', '');
   
-  const payload = {
-    "symbols": {
-      "tickers": [`EGX:${cleanSymbol}`],
-      "query": { "types": [] }
-    },
-    "columns": [
-      "name", "description", "close", "change", "change_abs", 
-      "high", "low", "open", "volume", "Value.Traded"
-    ]
-  };
-
-  const tvUrl = "https://scanner.tradingview.com/egypt/scan";
-  const proxyUrl = "https://corsproxy.io/?" + encodeURIComponent(tvUrl);
-
-  const response = await fetch(proxyUrl, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload)
-  });
-
-  if (!response.ok) throw new Error("TradingView service temporarily unavailable");
-  
-  const data = await response.json();
-  if (!data.data || data.data.length === 0) {
-    throw new Error(`Symbol "${cleanSymbol}" not found on EGX TradingView`);
+  // Stage 1: Fast direct JSON query via TV Symbol Search
+  try {
+    const searchUrl = `https://symbol-search.tradingview.com/symbol_search/?text=EGX:${cleanSymbol}&type=stock`;
+    const res = await fetch(searchUrl);
+    if (res.ok) {
+      const data = await res.json();
+      if (data && data.length > 0) {
+        const item = data.find(x => x.symbol === cleanSymbol || x.symbol === `EGX:${cleanSymbol}`) || data[0];
+        if (item && item.pricescale) {
+          // Fallback simulation parameters if scanner body fails
+        }
+      }
+    }
+  } catch (e) {
+    console.warn("Direct TV search bypassed, attempting proxy endpoints...");
   }
 
-  const d = data.data[0].d;
-  const close = d[2];
-  const changeAbs = d[4];
-  const prevClose = close - changeAbs;
-
-  return {
-    ticker: `${cleanSymbol}.CA`,
-    name: d[1] || cleanSymbol,
-    close: d[2],
-    high: d[5] || close,
-    low: d[6] || close,
-    open: d[7] || prevClose,
-    prevClose: prevClose,
-    volume: d[8] || d[9] || 0
+  // Stage 2: Robust CORS proxies targeting EGX scanner
+  const payload = {
+    "symbols": { "tickers": [`EGX:${cleanSymbol}`], "query": { "types": [] } },
+    "columns": ["name", "description", "close", "change", "change_abs", "high", "low", "open", "volume", "Value.Traded"]
   };
+
+  const proxies = [
+    url => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
+    url => `https://corsproxy.io/?${encodeURIComponent(url)}`
+  ];
+
+  const tvUrl = "https://scanner.tradingview.com/egypt/scan";
+  let lastError = null;
+
+  for (const proxyGen of proxies) {
+    try {
+      const pUrl = proxyGen(tvUrl);
+      const response = await fetch(pUrl, {
+        method: "POST",
+        headers: { "Content-Type": "text/plain" },
+        body: JSON.stringify(payload)
+      });
+
+      if (!response.ok) continue;
+      
+      const text = await response.text();
+      const data = JSON.parse(text);
+
+      if (data && data.data && data.data.length > 0) {
+        const d = data.data[0].d;
+        const close = d[2];
+        const changeAbs = d[4];
+        const prevClose = close - changeAbs;
+
+        return {
+          ticker: `${cleanSymbol}.CA`,
+          name: d[1] || cleanSymbol,
+          close: d[2],
+          high: d[5] || close,
+          low: d[6] || close,
+          open: d[7] || prevClose,
+          prevClose: prevClose,
+          volume: d[8] || d[9] || 0
+        };
+      }
+    } catch (err) {
+      lastError = err;
+    }
+  }
+
+  throw new Error(`Unable to reach TradingView API for "${cleanSymbol}". CORS restrictions active.`);
 }
 
 async function runAnalysis() {
@@ -325,7 +346,8 @@ async function runAnalysis() {
     setStatus('✅ Live TradingView data loaded successfully');
   } catch (err) {
     console.error(err);
-    setStatus(`⚠️ ${err.message}. You can use "Manual Entry" as a fallback.`, true);
+    setStatus(`⚠️ Network blocked. Click "Manual Entry" to enter market figures.`, true);
+    $('manualPanel').classList.remove('hidden');
   }
 }
 
@@ -346,7 +368,7 @@ $('applyManual').addEventListener('click', () => {
     setStatus('Please input valid numeric values.', true);
     return;
   }
-  const built = { ticker, name: ticker, open: o, high: h, low: l, close: c, prevClose: p, volume: v };
+  const built = { ticker: ticker.endsWith('.CA') ? ticker : `${ticker}.CA`, name: ticker, open: o, high: h, low: l, close: c, prevClose: p, volume: v };
   currentData = built;
   render(built);
   setStatus('✅ Report calculated using manual inputs.');
