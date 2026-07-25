@@ -112,9 +112,6 @@
   .manual-grid input { width: 100%; background: var(--panel-2); border: 1px solid var(--line); color: var(--text); border-radius: 8px; padding: 10px; }
   
   .hidden { display: none !important; }
-  .strategy-box {
-    background: var(--panel-2); border-left: 4px solid var(--accent); padding: 14px 18px; border-radius: 8px; margin-bottom: 14px; font-size: 14.5px; line-height: 1.7;
-  }
   #shareCanvas { width: 100%; border-radius: 12px; border: 1px solid var(--line); display: block; margin-top: 10px; }
 </style>
 </head>
@@ -140,10 +137,10 @@
   <div id="manualPanel" class="card hidden">
     <h2>✍️ Manual Data Entry (Medium-Term Parameters)</h2>
     <div class="manual-grid">
-      <div><label>Current Price</label><input id="m_close" type="number" step="0.01"></div>
-      <div><label>Previous Close</label><input id="m_prev" type="number" step="0.01"></div>
-      <div><label>Current Session Volume</label><input id="m_vol" type="number" step="1"></div>
-      <div><label>20-Day Avg Volume</label><input id="m_avgvol" type="number" step="1"></div>
+      <div><label>Current Price (EGP)</label><input id="m_close" type="number" step="0.01"></div>
+      <div><label>Previous Close (EGP)</label><input id="m_prev" type="number" step="0.01"></div>
+      <div><label>Session Vol (in Millions, e.g. 1.25)</label><input id="m_vol" type="number" step="0.01"></div>
+      <div><label>20-Day Avg Vol (in Millions, e.g. 1.10)</label><input id="m_avgvol" type="number" step="0.01"></div>
       <div><label>EMA 20</label><input id="m_ema20" type="number" step="0.01"></div>
       <div><label>EMA 50</label><input id="m_ema50" type="number" step="0.01"></div>
       <div><label>EMA 200</label><input id="m_ema200" type="number" step="0.01"></div>
@@ -226,6 +223,11 @@ let currentData = null;
 
 const $ = id => document.getElementById(id);
 const fmt = n => (n === null || n === undefined || isNaN(n) || !isFinite(n)) ? '--' : n.toFixed(2);
+const fmtMillions = val => {
+  if (val === null || val === undefined || isNaN(val) || !isFinite(val)) return '--';
+  const inM = val / 1000000;
+  return `${inM.toFixed(2)}M`;
+};
 
 function setTheme(theme, e) {
   document.documentElement.setAttribute('data-theme', theme);
@@ -243,13 +245,12 @@ function setStatus(msg, isErr) {
 $('tickerInput').addEventListener('keypress', (e) => { if (e.key === 'Enter') runAnalysis(); });
 $('fetchBtn').addEventListener('click', runAnalysis);
 
-// Fetch Data via Cloudflare Worker Proxy with volume calculation fix
 async function fetchTradingViewData(ticker) {
   const cleanSymbol = ticker.trim().toUpperCase().replace('.CA', '');
   const tvUrl = "https://scanner.tradingview.com/egypt/scan";
   
   // REPLACE WITH YOUR CLOUDFLARE WORKER URL:
-  const workerProxy = "https://my-stock-proxy.amr7-elsherif.workers.dev/"; 
+  const workerProxy = "https://my-stock-proxy.amr7-elsherif.workers.dev"; 
   const proxyEndpoint = `${workerProxy}/?url=${encodeURIComponent(tvUrl)}`;
 
   const payload = {
@@ -276,11 +277,11 @@ async function fetchTradingViewData(ticker) {
     const changeAbs = d[3];
     const vol = d[4] || 0;
     
-    // Fixed 20-Day Volume computation using TradingView 10d and 30d calculations
+    // Improved 20-Day Volume Average derivation
     const avg10 = d[5] || 0;
     const avg30 = d[6] || 0;
     let avg20 = (avg10 + avg30) / 2;
-    if (!avg20 || avg20 === 0) avg20 = vol; // fallback
+    if (!avg20 || avg20 === 0) avg20 = vol; 
 
     return {
       ticker: `${cleanSymbol}.CA`,
@@ -325,8 +326,13 @@ $('applyManual').addEventListener('click', () => {
   const ticker = $('tickerInput').value.trim().toUpperCase() || 'STOCK';
   const c = parseFloat($('m_close').value);
   const p = parseFloat($('m_prev').value) || c;
-  const v = parseFloat($('m_vol').value) || 0;
-  const avgV = parseFloat($('m_avgvol').value) || 1;
+  
+  // Inputs in Millions converted back to raw units for uniform computation
+  const vInMillions = parseFloat($('m_vol').value) || 0;
+  const avgVInMillions = parseFloat($('m_avgvol').value) || 0.000001;
+  const v = vInMillions * 1000000;
+  const avgV = avgVInMillions * 1000000;
+
   const e20 = parseFloat($('m_ema20').value) || c;
   const e50 = parseFloat($('m_ema50').value) || c;
   const e200 = parseFloat($('m_ema200').value) || c;
@@ -399,8 +405,9 @@ function render(d) {
   chgEl.textContent = (chgVal >= 0 ? '+' : '') + fmt(chgVal) + ' (' + (a.pct >= 0 ? '+' : '') + a.pct.toFixed(2) + '%)';
   chgEl.className = 'chg ' + (chgVal >= 0 ? 'up' : 'down');
 
-  $('outVol').textContent = d.volume ? Number(d.volume).toLocaleString('en-US') : '--';
-  $('outAvgVol').textContent = d.avgVolume ? Number(Math.round(d.avgVolume)).toLocaleString('en-US') : '--';
+  // Formatted in Millions
+  $('outVol').textContent = fmtMillions(d.volume);
+  $('outAvgVol').textContent = fmtMillions(d.avgVolume);
   $('outRvol').textContent = `${a.rvol.toFixed(2)}x`;
   
   const vStat = $('outVolStatus');
@@ -421,12 +428,12 @@ function render(d) {
   const notes = [
     `Medium-Term Trend: Price is currently ${d.close >= d.ema200 ? 'above' : 'below'} the structural 200 EMA (${fmt(d.ema200)} EGP).`,
     `MACD Alignment: ${a.macdBullish ? 'MACD Line is operating ABOVE Signal line (Positive Momentum).' : 'MACD Line is operating BELOW Signal line (Bearish Momentum).'}`,
-    `Volume Trigger Rule: Session volume is ${a.rvol.toFixed(2)}x relative to its 20-day average. ${a.volumeTriggerMet ? 'Breakout is backed by institutional buying volume.' : 'Requires a minimum 1.5x volume expansion to validate position entry.'}`
+    `Volume Trigger Rule: Session volume is ${fmtMillions(d.volume)} (${a.rvol.toFixed(2)}x vs 20D MA of ${fmtMillions(d.avgVolume)}). ${a.volumeTriggerMet ? 'Breakout is backed by institutional buying volume.' : 'Requires a minimum 1.5x volume expansion to validate position entry.'}`
   ];
   notes.forEach(n => { const li = document.createElement('li'); li.textContent = n; notesEl.appendChild(li); });
 
   $('outBuyZone').textContent = `${fmt(a.buyZoneLow)} - ${fmt(a.buyZoneHigh)}`;
-  $('outVolTrigger').textContent = `${Number(Math.round(d.avgVolume * 1.5)).toLocaleString('en-US')} shares`;
+  $('outVolTrigger').textContent = `${fmtMillions(d.avgVolume * 1.5)}`;
   $('outTarget').textContent = fmt(a.targetPrice);
   $('outStop').textContent = fmt(a.stopLoss);
   $('outRecTitle').textContent = a.recTitle;
@@ -435,7 +442,7 @@ function render(d) {
   recNotesEl.innerHTML = '';
   const recNotes = [
     `Ideal Entry Strategy: Accumulate within the Buy Zone (${fmt(a.buyZoneLow)} - ${fmt(a.buyZoneHigh)} EGP).`,
-    `Volume Entry Condition: Execute entry when volume breaches the trigger threshold of ${Number(Math.round(d.avgVolume * 1.5)).toLocaleString('en-US')} shares.`,
+    `Volume Entry Condition: Execute entry when session volume breaches the trigger threshold of ${fmtMillions(d.avgVolume * 1.5)}.`,
     `Risk Control: Maintain medium-term structural Stop Loss at ${fmt(a.stopLoss)} EGP.`
   ];
   recNotes.forEach(n => { const li = document.createElement('li'); li.textContent = n; recNotesEl.appendChild(li); });
@@ -488,8 +495,8 @@ function drawShareCanvas(d, a) {
   }
 
   const gy = 350, gw = (W - 120 - 30) / 4, gh = 90;
-  statBox(60, gy, gw, gh, 'Session Vol', d.volume ? Number(d.volume).toLocaleString() : '--');
-  statBox(60 + gw + 10, gy, gw, gh, '20D Avg Vol', d.avgVolume ? Number(Math.round(d.avgVolume)).toLocaleString() : '--');
+  statBox(60, gy, gw, gh, 'Session Vol', fmtMillions(d.volume));
+  statBox(60 + gw + 10, gy, gw, gh, '20D Avg Vol', fmtMillions(d.avgVolume));
   statBox(60 + 2 * (gw + 10), gy, gw, gh, 'Relative Vol', `${a.rvol.toFixed(2)}x`);
   statBox(60 + 3 * (gw + 10), gy, gw, gh, 'Vol Trigger', a.volumeTriggerMet ? 'PASSED' : 'WAITING', a.volumeTriggerMet ? greenColor : '#ffb74d');
 
