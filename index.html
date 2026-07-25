@@ -273,7 +273,7 @@ async function fetchTradingViewData(ticker) {
   const tvUrl = "https://scanner.tradingview.com/egypt/scan";
   
   // REPLACE WITH YOUR CLOUDFLARE WORKER PROXY URL:
-  const workerProxy = "https://https://my-stock-proxy.amr7-elsherif.workers.dev"; 
+  const workerProxy = "https://my-stock-proxy.amr7-elsherif.workers.dev"; 
   const proxyEndpoint = `${workerProxy}/?url=${encodeURIComponent(tvUrl)}`;
 
   const payload = {
