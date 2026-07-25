@@ -3,153 +3,177 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>تقييم التحليل الفني للأسهم</title>
+    <title>محلل الأسهم الفني - Stock Analyzer</title>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-gray-900 text-gray-100 font-sans p-6">
 
-    <div class="max-w-4xl mx-auto bg-gray-800 rounded-xl shadow-lg border border-gray-700 p-6">
-        
-        <!-- Header & Language Switcher -->
-        <div class="flex flex-col md:flex-row justify-between items-start md:items-center border-b border-gray-700 pb-4 mb-6 gap-4">
-            <div>
-                <h1 class="text-2xl font-bold text-white flex items-center gap-2" id="title">
-                    EGYP / تقرير التحليل الفني
-                </h1>
-                <p class="text-sm text-gray-400">
-                    <span id="label-strategy">الاستراتيجية:</span> 
-                    <span class="text-blue-400 font-semibold" id="val-strategy">تقييم إعادة اختبار الدعم</span>
-                </p>
-            </div>
-            
-            <div class="flex items-center gap-3">
-                <button onclick="toggleLanguage()" class="bg-gray-700 hover:bg-gray-600 text-xs text-blue-300 font-semibold px-3 py-1.5 rounded-lg border border-gray-600 transition">
-                    🌐 English / عربي
+    <div class="max-w-4xl mx-auto space-y-6">
+
+        <!-- Input & Search Section (قسم إدخال بيانات السهم) -->
+        <div class="bg-gray-800 rounded-xl border border-gray-700 p-4 shadow-lg flex flex-col md:flex-row gap-4 items-center justify-between">
+            <div class="w-full md:w-2/3 flex gap-2">
+                <input type="text" id="stock-input" placeholder="أدخل رمز أو اسم السهم (مثال: EGYP أو COMI)..." value="EGYP" 
+                    class="w-full bg-gray-900 border border-gray-700 text-white rounded-lg px-4 py-2 text-sm focus:outline-none focus:border-blue-500">
+                <button onclick="updateStockData()" id="btn-search" class="bg-blue-600 hover:bg-blue-500 text-white px-5 py-2 rounded-lg text-sm font-semibold transition shrink-0">
+                    عرض التقرير
                 </button>
-                <span class="inline-block bg-yellow-500/10 text-yellow-400 border border-yellow-500/30 text-xs px-3 py-1 rounded-full font-semibold" id="status-badge">
-                    الحالة: مراقبة (3.0 / 5.0)
-                </span>
             </div>
-        </div>
-
-        <!-- Strategy Tabs -->
-        <div class="grid grid-cols-2 gap-4 mb-6">
-            <div class="bg-gray-900/50 border border-gray-700 p-3 rounded-lg text-center opacity-50">
-                <p class="text-xs text-gray-400 uppercase font-semibold" id="tab-strat-a">استراتيجية أ</p>
-                <p class="text-sm font-bold text-gray-300" id="tab-breakout">اختراق المقاومة</p>
-            </div>
-            <div class="bg-blue-900/20 border border-blue-500/50 p-3 rounded-lg text-center">
-                <p class="text-xs text-blue-400 uppercase font-semibold" id="tab-strat-b">استراتيجية ب (نشطة)</p>
-                <p class="text-sm font-bold text-blue-200" id="tab-retest">إعادة اختبار الدعم</p>
-            </div>
-        </div>
-
-        <!-- Score Breakdown Table -->
-        <div class="overflow-x-auto mb-6">
-            <table class="w-full text-right border-collapse" id="main-table">
-                <thead>
-                    <tr class="bg-gray-900/80 text-gray-400 text-xs uppercase border-b border-gray-700">
-                        <th class="py-3 px-4" id="th-param">المؤشر / الشرط</th>
-                        <th class="py-3 px-4" id="th-target">الهدف المطلوب</th>
-                        <th class="py-3 px-4" id="th-current">القيمة الحالية</th>
-                        <th class="py-3 px-4 text-center" id="th-status">الحالة</th>
-                        <th class="py-3 px-4 text-left" id="th-points">النقاط</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-gray-700/50 text-sm">
-                    <tr class="hover:bg-gray-750">
-                        <td class="py-3 px-4 font-medium text-white" id="r1-name">الاتجاه العام</td>
-                        <td class="py-3 px-4 text-gray-400" id="r1-target">السعر ≥ المتوسط 200 EMA</td>
-                        <td class="py-3 px-4 text-gray-300" id="r1-val">أعلى من المتوسط 200</td>
-                        <td class="py-3 px-4 text-center">
-                            <span class="bg-emerald-500/10 text-emerald-400 text-xs px-2 py-0.5 rounded border border-emerald-500/20 font-semibold" id="r1-status">مكتمل</span>
-                        </td>
-                        <td class="py-3 px-4 text-left font-mono text-emerald-400">1.0 / 1.0</td>
-                    </tr>
-                    <tr class="hover:bg-gray-750">
-                        <td class="py-3 px-4 font-medium text-white" id="r2-name">اختبار الدعم</td>
-                        <td class="py-3 px-4 text-gray-400" id="r2-target">الثبات فوق منطقة دعم رئيسية</td>
-                        <td class="py-3 px-4 text-gray-300" id="r2-val">اختبار دعم 183.00 ج.م</td>
-                        <td class="py-3 px-4 text-center">
-                            <span class="bg-emerald-500/10 text-emerald-400 text-xs px-2 py-0.5 rounded border border-emerald-500/20 font-semibold" id="r2-status">مكتمل</span>
-                        </td>
-                        <td class="py-3 px-4 text-left font-mono text-emerald-400">1.0 / 1.0</td>
-                    </tr>
-                    <tr class="hover:bg-gray-750">
-                        <td class="py-3 px-4 font-medium text-white" id="r3-name">ارتداد RSI</td>
-                        <td class="py-3 px-4 text-gray-400" id="r3-target">مؤشر القوة بين 35 – 50</td>
-                        <td class="py-3 px-4 text-gray-300" id="r3-val">RSI = 42.5</td>
-                        <td class="py-3 px-4 text-center">
-                            <span class="bg-emerald-500/10 text-emerald-400 text-xs px-2 py-0.5 rounded border border-emerald-500/20 font-semibold" id="r3-status">مكتمل</span>
-                        </td>
-                        <td class="py-3 px-4 text-left font-mono text-emerald-400">1.0 / 1.0</td>
-                    </tr>
-                    <tr class="bg-red-950/10 hover:bg-red-950/20">
-                        <td class="py-3 px-4 font-medium text-white" id="r4-name">انعطاف MACD</td>
-                        <td class="py-3 px-4 text-gray-400" id="r4-target">تقلص أعمدة الهيستوجرام للأعلى</td>
-                        <td class="py-3 px-4 text-red-300" id="r4-val">توسع للسفل (سلبي)</td>
-                        <td class="py-3 px-4 text-center">
-                            <span class="bg-rose-500/10 text-rose-400 text-xs px-2 py-0.5 rounded border border-rose-500/20 font-semibold" id="r4-status">غير مكتمل</span>
-                        </td>
-                        <td class="py-3 px-4 text-left font-mono text-rose-400">0.0 / 1.0</td>
-                    </tr>
-                    <tr class="bg-red-950/10 hover:bg-red-950/20">
-                        <td class="py-3 px-4 font-medium text-white" id="r5-name">تأكيد أحجام التداول</td>
-                        <td class="py-3 px-4 text-gray-400" id="r5-target">الحجم > 1.30x متوسط 20 يوم</td>
-                        <td class="py-3 px-4 text-red-300" id="r5-val">الحجم = 0.85x المتوسط</td>
-                        <td class="py-3 px-4 text-center">
-                            <span class="bg-rose-500/10 text-rose-400 text-xs px-2 py-0.5 rounded border border-rose-500/20 font-semibold" id="r5-status">غير مكتمل</span>
-                        </td>
-                        <td class="py-3 px-4 text-left font-mono text-rose-400">0.0 / 1.0</td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
-
-        <!-- Highlighted Unachieved Conditions -->
-        <div class="bg-rose-950/20 border border-rose-500/30 rounded-lg p-4 mb-4">
-            <h3 class="text-sm font-semibold text-rose-400 flex items-center gap-2 mb-2" id="missed-title">
-                ⚠️ الشروط غير المحققة (فارق -2.0 نقطة)
-            </h3>
-            <ul class="list-disc list-inside text-xs text-rose-200/80 space-y-1" id="missed-list">
-                <li><strong class="text-rose-300">عزم MACD:</strong> لم يلتف منحنى MACD للأعلى بعد. يفضل انتظار تقاطع إيجابي قبل الدخول.</li>
-                <li><strong class="text-rose-300">حجم التداول عند الدعم:</strong> الفوليوم الحالي ضعيف (0.85x). نحتاج إلى دخول سيولة واضحة لتأكيد حماية منطقة الدعم.</li>
-            </ul>
-        </div>
-
-        <!-- Multi-Timeframe Pattern Analysis Note (جديد: تحليل النماذج على الفريم الأسبوعي واليومي) -->
-        <div class="bg-indigo-950/30 border border-indigo-500/30 rounded-lg p-4 mb-6">
-            <h3 class="text-sm font-semibold text-indigo-300 flex items-center gap-2 mb-2" id="patterns-title">
-                🔍 تحليل النماذج الفنية (الفريم الأسبوعي واليومي)
-            </h3>
-            <ul class="list-disc list-inside text-xs text-indigo-200/90 space-y-2" id="patterns-list">
-                <li>
-                    <strong class="text-indigo-400" id="pat-weekly-label">الفريم الأسبوعي (Weekly):</strong>
-                    <span id="pat-weekly-val">نموذج استمراري محتمل (Bull Flag / علم صاعد). الاتجاه الرئيسي صاعد، والتصحيح الحالي في نطاق ضيق يعكس تجميعاً هادئاً.</span>
-                </li>
-                <li>
-                    <strong class="text-indigo-400" id="pat-daily-label">الفريم اليومي (Daily):</strong>
-                    <span id="pat-daily-val">تكون قاع مزدوج محتمل (Potential Double Bottom) عند منطقة الدعم 183.00 ج.م. في انتظار تأكيد اختراق خط العنق عند 192.50 ج.م مع فوليوم مرتفع.</span>
-                </li>
-            </ul>
-        </div>
-
-        <!-- Footer -->
-        <div class="flex justify-between items-center bg-gray-900/60 p-4 rounded-lg border border-gray-700">
-            <div>
-                <p class="text-xs text-gray-400" id="lbl-threshold">الحد الأدنى للتفعيل: <span class="text-gray-200 font-semibold">≥ 4.0 نقاط</span></p>
-                <p class="text-xs text-gray-400" id="lbl-score">النقاط الحالية: <span class="text-yellow-400 font-bold">3.0 نقاط</span></p>
-            </div>
-            <button disabled class="bg-gray-700 text-gray-400 px-4 py-2 rounded-lg text-sm font-semibold cursor-not-allowed border border-gray-600" id="btn-trigger">
-                اشارة الدخول معطلة
+            <!-- Language Switcher -->
+            <button onclick="toggleLanguage()" class="bg-gray-700 hover:bg-gray-600 text-xs text-blue-300 font-semibold px-3 py-2 rounded-lg border border-gray-600 transition w-full md:w-auto">
+                🌐 English / عربي
             </button>
+        </div>
+
+        <!-- Main Report Card (التقرير التحليلي) -->
+        <div class="bg-gray-800 rounded-xl shadow-lg border border-gray-700 p-6">
+            
+            <!-- Header -->
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center border-b border-gray-700 pb-4 mb-6 gap-4">
+                <div>
+                    <h1 class="text-2xl font-bold text-white flex items-center gap-2">
+                        <span id="display-ticker" class="text-blue-400">EGYP</span> / <span id="title">تقرير التحليل الفني</span>
+                    </h1>
+                    <p class="text-sm text-gray-400">
+                        <span id="label-strategy">الاستراتيجية:</span> 
+                        <span class="text-blue-400 font-semibold" id="val-strategy">تقييم إعادة اختبار الدعم</span>
+                    </p>
+                </div>
+                
+                <div>
+                    <span class="inline-block bg-yellow-500/10 text-yellow-400 border border-yellow-500/30 text-xs px-3 py-1 rounded-full font-semibold" id="status-badge">
+                        الحالة: مراقبة (3.0 / 5.0)
+                    </span>
+                </div>
+            </div>
+
+            <!-- Strategy Tabs -->
+            <div class="grid grid-cols-2 gap-4 mb-6">
+                <div class="bg-gray-900/50 border border-gray-700 p-3 rounded-lg text-center opacity-50">
+                    <p class="text-xs text-gray-400 uppercase font-semibold" id="tab-strat-a">استراتيجية أ</p>
+                    <p class="text-sm font-bold text-gray-300" id="tab-breakout">اختراق المقاومة</p>
+                </div>
+                <div class="bg-blue-900/20 border border-blue-500/50 p-3 rounded-lg text-center">
+                    <p class="text-xs text-blue-400 uppercase font-semibold" id="tab-strat-b">استراتيجية ب (نشطة)</p>
+                    <p class="text-sm font-bold text-blue-200" id="tab-retest">إعادة اختبار الدعم</p>
+                </div>
+            </div>
+
+            <!-- Score Breakdown Table -->
+            <div class="overflow-x-auto mb-6">
+                <table class="w-full text-right border-collapse" id="main-table">
+                    <thead>
+                        <tr class="bg-gray-900/80 text-gray-400 text-xs uppercase border-b border-gray-700">
+                            <th class="py-3 px-4" id="th-param">المؤشر / الشرط</th>
+                            <th class="py-3 px-4" id="th-target">الهدف المطلوب</th>
+                            <th class="py-3 px-4" id="th-current">القيمة الحالية</th>
+                            <th class="py-3 px-4 text-center" id="th-status">الحالة</th>
+                            <th class="py-3 px-4 text-left" id="th-points">النقاط</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-700/50 text-sm">
+                        <tr class="hover:bg-gray-750">
+                            <td class="py-3 px-4 font-medium text-white" id="r1-name">الاتجاه العام</td>
+                            <td class="py-3 px-4 text-gray-400" id="r1-target">السعر ≥ المتوسط 200 EMA</td>
+                            <td class="py-3 px-4 text-gray-300" id="r1-val">أعلى من المتوسط 200</td>
+                            <td class="py-3 px-4 text-center">
+                                <span class="bg-emerald-500/10 text-emerald-400 text-xs px-2 py-0.5 rounded border border-emerald-500/20 font-semibold" id="r1-status">مكتمل</span>
+                            </td>
+                            <td class="py-3 px-4 text-left font-mono text-emerald-400">1.0 / 1.0</td>
+                        </tr>
+                        <tr class="hover:bg-gray-750">
+                            <td class="py-3 px-4 font-medium text-white" id="r2-name">اختبار الدعم</td>
+                            <td class="py-3 px-4 text-gray-400" id="r2-target">الثبات فوق منطقة دعم رئيسية</td>
+                            <td class="py-3 px-4 text-gray-300" id="r2-val">اختبار دعم 183.00 ج.م</td>
+                            <td class="py-3 px-4 text-center">
+                                <span class="bg-emerald-500/10 text-emerald-400 text-xs px-2 py-0.5 rounded border border-emerald-500/20 font-semibold" id="r2-status">مكتمل</span>
+                            </td>
+                            <td class="py-3 px-4 text-left font-mono text-emerald-400">1.0 / 1.0</td>
+                        </tr>
+                        <tr class="hover:bg-gray-750">
+                            <td class="py-3 px-4 font-medium text-white" id="r3-name">ارتداد RSI</td>
+                            <td class="py-3 px-4 text-gray-400" id="r3-target">مؤشر القوة بين 35 – 50</td>
+                            <td class="py-3 px-4 text-gray-300" id="r3-val">RSI = 42.5</td>
+                            <td class="py-3 px-4 text-center">
+                                <span class="bg-emerald-500/10 text-emerald-400 text-xs px-2 py-0.5 rounded border border-emerald-500/20 font-semibold" id="r3-status">مكتمل</span>
+                            </td>
+                            <td class="py-3 px-4 text-left font-mono text-emerald-400">1.0 / 1.0</td>
+                        </tr>
+                        <tr class="bg-red-950/10 hover:bg-red-950/20">
+                            <td class="py-3 px-4 font-medium text-white" id="r4-name">انعطاف MACD</td>
+                            <td class="py-3 px-4 text-gray-400" id="r4-target">تقلص أعمدة الهيستوجرام للأعلى</td>
+                            <td class="py-3 px-4 text-red-300" id="r4-val">توسع للسفل (سلبي)</td>
+                            <td class="py-3 px-4 text-center">
+                                <span class="bg-rose-500/10 text-rose-400 text-xs px-2 py-0.5 rounded border border-rose-500/20 font-semibold" id="r4-status">غير مكتمل</span>
+                            </td>
+                            <td class="py-3 px-4 text-left font-mono text-rose-400">0.0 / 1.0</td>
+                        </tr>
+                        <tr class="bg-red-950/10 hover:bg-red-950/20">
+                            <td class="py-3 px-4 font-medium text-white" id="r5-name">تأكيد أحجام التداول</td>
+                            <td class="py-3 px-4 text-gray-400" id="r5-target">الحجم > 1.30x متوسط 20 يوم</td>
+                            <td class="py-3 px-4 text-red-300" id="r5-val">الحجم = 0.85x المتوسط</td>
+                            <td class="py-3 px-4 text-center">
+                                <span class="bg-rose-500/10 text-rose-400 text-xs px-2 py-0.5 rounded border border-rose-500/20 font-semibold" id="r5-status">غير مكتمل</span>
+                            </td>
+                            <td class="py-3 px-4 text-left font-mono text-rose-400">0.0 / 1.0</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Highlighted Unachieved Conditions -->
+            <div class="bg-rose-950/20 border border-rose-500/30 rounded-lg p-4 mb-4">
+                <h3 class="text-sm font-semibold text-rose-400 flex items-center gap-2 mb-2" id="missed-title">
+                    ⚠️ الشروط غير المحققة (فارق -2.0 نقطة)
+                </h3>
+                <ul class="list-disc list-inside text-xs text-rose-200/80 space-y-1" id="missed-list">
+                    <li><strong class="text-rose-300">عزم MACD:</strong> لم يلتف منحنى MACD للأعلى بعد. يفضل انتظار تقاطع إيجابي قبل الدخول.</li>
+                    <li><strong class="text-rose-300">حجم التداول عند الدعم:</strong> الفوليوم الحالي ضعيف (0.85x). نحتاج إلى دخول سيولة واضحة لتأكيد حماية منطقة الدعم.</li>
+                </ul>
+            </div>
+
+            <!-- Pattern Analysis Note (تحليل النماذج الأسبوعية واليومية) -->
+            <div class="bg-indigo-950/30 border border-indigo-500/30 rounded-lg p-4 mb-6">
+                <h3 class="text-sm font-semibold text-indigo-300 flex items-center gap-2 mb-2" id="patterns-title">
+                    🔍 تحليل النماذج الفنية (الفريم الأسبوعي واليومي)
+                </h3>
+                <ul class="list-disc list-inside text-xs text-indigo-200/90 space-y-2" id="patterns-list">
+                    <li>
+                        <strong class="text-indigo-400" id="pat-weekly-label">الفريم الأسبوعي (Weekly):</strong>
+                        <span id="pat-weekly-val">نموذج استمراري محتمل (Bull Flag / علم صاعد). الاتجاه الرئيسي صاعد، والتصحيح الحالي في نطاق ضيق يعكس تجميعاً هادئاً.</span>
+                    </li>
+                    <li>
+                        <strong class="text-indigo-400" id="pat-daily-label">الفريم اليومي (Daily):</strong>
+                        <span id="pat-daily-val">تكون قاع مزدوج محتمل (Potential Double Bottom) عند منطقة الدعم. في انتظار تأكيد اختراق خط العنق مع فوليوم مرتفع.</span>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- Footer Status -->
+            <div class="flex justify-between items-center bg-gray-900/60 p-4 rounded-lg border border-gray-700">
+                <div>
+                    <p class="text-xs text-gray-400" id="lbl-threshold">الحد الأدنى للتفعيل: <span class="text-gray-200 font-semibold">≥ 4.0 نقاط</span></p>
+                    <p class="text-xs text-gray-400" id="lbl-score">النقاط الحالية: <span class="text-yellow-400 font-bold">3.0 نقاط</span></p>
+                </div>
+                <button disabled class="bg-gray-700 text-gray-400 px-4 py-2 rounded-lg text-sm font-semibold cursor-not-allowed border border-gray-600" id="btn-trigger">
+                    اشارة الدخول معطلة
+                </button>
+            </div>
+
         </div>
 
     </div>
 
-    <!-- Toggle Script -->
+    <!-- Scripts -->
     <script>
         let currentLang = 'ar';
+
+        function updateStockData() {
+            const inputVal = document.getElementById('stock-input').value.trim().toUpperCase();
+            if(inputVal !== "") {
+                document.getElementById('display-ticker').innerText = inputVal;
+            }
+        }
 
         function toggleLanguage() {
             const html = document.getElementById('html-tag');
@@ -161,8 +185,10 @@
                 table.classList.remove('text-right');
                 table.classList.add('text-left');
                 
-                // Header & Badges
-                document.getElementById('title').innerText = "EGYP / Technical Analysis Scorecard";
+                document.getElementById('stock-input').placeholder = "Enter ticker (e.g. EGYP, COMI)...";
+                document.getElementById('btn-search').innerText = "Generate Report";
+
+                document.getElementById('title').innerText = "Technical Analysis Scorecard";
                 document.getElementById('label-strategy').innerText = "Strategy:";
                 document.getElementById('val-strategy').innerText = "Support Retest Evaluation";
                 document.getElementById('status-badge').innerText = "STATUS: WATCH (3.0 / 5.0)";
@@ -171,14 +197,12 @@
                 document.getElementById('tab-strat-b').innerText = "Strategy B (Active)";
                 document.getElementById('tab-retest').innerText = "Support Retest";
 
-                // Table Headers
                 document.getElementById('th-param').innerText = "Parameter";
                 document.getElementById('th-target').innerText = "Support Retest Target";
                 document.getElementById('th-current').innerText = "Current Value";
                 document.getElementById('th-status').innerText = "Status";
                 document.getElementById('th-points').innerText = "Points";
 
-                // Rows
                 document.getElementById('r1-name').innerText = "Structural Base";
                 document.getElementById('r1-target').innerText = "Price ≥ 200 EMA";
                 document.getElementById('r1-val').innerText = "Above 200 EMA";
@@ -186,7 +210,7 @@
 
                 document.getElementById('r2-name').innerText = "Support Retest";
                 document.getElementById('r2-target').innerText = "Holding Key Support Zone";
-                document.getElementById('r2-val').innerText = "Retesting EGP 183.00";
+                document.getElementById('r2-val').innerText = "Retesting Support Level";
                 document.getElementById('r2-status').innerText = "PASS";
 
                 document.getElementById('r3-name').innerText = "RSI Recovery";
@@ -204,21 +228,18 @@
                 document.getElementById('r5-val').innerText = "Volume = 0.85x Avg";
                 document.getElementById('r5-status').innerText = "FAILED";
 
-                // Missed Section
                 document.getElementById('missed-title').innerText = "⚠️ Missed Requirements (-2.0 Points Gap)";
                 document.getElementById('missed-list').innerHTML = `
                     <li><strong class="text-rose-300">MACD Momentum:</strong> MACD histogram hasn't turned upward yet. Wait for bullish momentum confirmation.</li>
                     <li><strong class="text-rose-300">Volume Defense:</strong> Current bounce volume is weak (0.85x average). Higher volume needed to confirm institutional support.</li>
                 `;
 
-                // Patterns Section
                 document.getElementById('patterns-title').innerText = "🔍 Pattern Recognition (Weekly & Daily)";
                 document.getElementById('pat-weekly-label').innerText = "Weekly Timeframe:";
                 document.getElementById('pat-weekly-val').innerText = "Potential Continuation Pattern (Bull Flag). Primary trend remains bullish with low-volume consolidation.";
                 document.getElementById('pat-daily-label').innerText = "Daily Timeframe:";
-                document.getElementById('pat-daily-val').innerText = "Potential Double Bottom forming at EGP 183.00 support. Awaiting neckline breakout at EGP 192.50 with volume confirmation.";
+                document.getElementById('pat-daily-val').innerText = "Potential Double Bottom forming at key support. Awaiting neckline breakout with volume confirmation.";
 
-                // Footer
                 document.getElementById('lbl-threshold').innerHTML = 'Trigger Threshold: <span class="text-gray-200 font-semibold">≥ 4.0 Points</span>';
                 document.getElementById('lbl-score').innerHTML = 'Current Score: <span class="text-yellow-400 font-bold">3.0 Points</span>';
                 document.getElementById('btn-trigger').innerText = "Trigger Signal Locked";
@@ -230,8 +251,10 @@
                 table.classList.remove('text-left');
                 table.classList.add('text-right');
                 
-                // Header & Badges
-                document.getElementById('title').innerText = "EGYP / تقرير التحليل الفني";
+                document.getElementById('stock-input').placeholder = "أدخل رمز أو اسم السهم (مثال: EGYP أو COMI)...";
+                document.getElementById('btn-search').innerText = "عرض التقرير";
+
+                document.getElementById('title').innerText = "تقرير التحليل الفني";
                 document.getElementById('label-strategy').innerText = "الاستراتيجية:";
                 document.getElementById('val-strategy').innerText = "تقييم إعادة اختبار الدعم";
                 document.getElementById('status-badge').innerText = "الحالة: مراقبة (3.0 / 5.0)";
@@ -240,14 +263,12 @@
                 document.getElementById('tab-strat-b').innerText = "استراتيجية ب (نشطة)";
                 document.getElementById('tab-retest').innerText = "إعادة اختبار الدعم";
 
-                // Table Headers
                 document.getElementById('th-param').innerText = "المؤشر / الشرط";
                 document.getElementById('th-target').innerText = "الهدف المطلوب";
                 document.getElementById('th-current').innerText = "القيمة الحالية";
                 document.getElementById('th-status').innerText = "الحالة";
                 document.getElementById('th-points').innerText = "النقاط";
 
-                // Rows
                 document.getElementById('r1-name').innerText = "الاتجاه العام";
                 document.getElementById('r1-target').innerText = "السعر ≥ المتوسط 200 EMA";
                 document.getElementById('r1-val').innerText = "أعلى من المتوسط 200";
@@ -255,7 +276,7 @@
 
                 document.getElementById('r2-name').innerText = "اختبار الدعم";
                 document.getElementById('r2-target').innerText = "الثبات فوق منطقة دعم رئيسية";
-                document.getElementById('r2-val').innerText = "اختبار دعم 183.00 ج.م";
+                document.getElementById('r2-val').innerText = "اختبار دعم السهم";
                 document.getElementById('r2-status').innerText = "مكتمل";
 
                 document.getElementById('r3-name').innerText = "ارتداد RSI";
@@ -273,21 +294,18 @@
                 document.getElementById('r5-val').innerText = "الحجم = 0.85x المتوسط";
                 document.getElementById('r5-status').innerText = "غير مكتمل";
 
-                // Missed Section
                 document.getElementById('missed-title').innerText = "⚠️ الشروط غير المحققة (فارق -2.0 نقطة)";
                 document.getElementById('missed-list').innerHTML = `
                     <li><strong class="text-rose-300">عزم MACD:</strong> لم يلتف منحنى MACD للأعلى بعد. يفضل انتظار تقاطع إيجابي قبل الدخول.</li>
                     <li><strong class="text-rose-300">حجم التداول عند الدعم:</strong> الفوليوم الحالي ضعيف (0.85x). نحتاج إلى دخول سيولة واضحة لتأكيد حماية منطقة الدعم.</li>
                 `;
 
-                // Patterns Section
                 document.getElementById('patterns-title').innerText = "🔍 تحليل النماذج الفنية (الفريم الأسبوعي واليومي)";
                 document.getElementById('pat-weekly-label').innerText = "الفريم الأسبوعي (Weekly):";
                 document.getElementById('pat-weekly-val').innerText = "نموذج استمراري محتمل (Bull Flag / علم صاعد). الاتجاه الرئيسي صاعد، والتصحيح الحالي في نطاق ضيق يعكس تجميعاً هادئاً.";
                 document.getElementById('pat-daily-label').innerText = "الفريم اليومي (Daily):";
-                document.getElementById('pat-daily-val').innerText = "تكون قاع مزدوج محتمل (Potential Double Bottom) عند منطقة الدعم 183.00 ج.م. في انتظار تأكيد اختراق خط العنق عند 192.50 ج.م مع فوليوم مرتفع.";
+                document.getElementById('pat-daily-val').innerText = "تكون قاع مزدوج محتمل (Potential Double Bottom) عند منطقة الدعم. في انتظار تأكيد اختراق خط العنق مع فوليوم مرتفع.";
 
-                // Footer
                 document.getElementById('lbl-threshold').innerHTML = 'الحد الأدنى للتفعيل: <span class="text-gray-200 font-semibold">≥ 4.0 نقاط</span>';
                 document.getElementById('lbl-score').innerHTML = 'النقاط الحالية: <span class="text-yellow-400 font-bold">3.0 نقاط</span>';
                 document.getElementById('btn-trigger').innerText = "اشارة الدخول معطلة";
