@@ -89,7 +89,7 @@
 <div class="wrap">
 
   <div class="toolbar">
-    <input id="tickerInput" placeholder="رمز السهم (مثل FWRY.CA)" value="FWRY.CA">
+    <input id="tickerInput" placeholder="رمز السهم (مثل ORAS.CA أو FWRY.CA)" value="ORAS.CA">
     <button id="fetchBtn">🔍 تحليل السهم الآن</button>
     <button id="manualBtn" class="secondary">✍️ إدخال يدوي</button>
     <div id="status" class="status">اكتب رمز السهم واضغط Enter أو زر "تحليل السهم الآن".</div>
@@ -187,7 +187,7 @@
 let currentData = null;
 
 const $ = id => document.getElementById(id);
-const fmt = n => (n===null||n===undefined||isNaN(n)) ? '--' : n.toFixed(2);
+const fmt = n => (n===null||n===undefined||isNaN(n)||!isFinite(n)) ? '--' : n.toFixed(2);
 
 function setStatus(msg, isErr){
   const el = $('status');
@@ -195,7 +195,6 @@ function setStatus(msg, isErr){
   el.className = 'status' + (isErr ? ' err' : '');
 }
 
-// تنفيذ التحليل فور كتابة التيكر أو الضغط على Enter
 $('tickerInput').addEventListener('keypress', (e)=>{
   if(e.key === 'Enter') runAnalysis();
 });
@@ -207,7 +206,7 @@ async function runAnalysis(){
   
   setStatus('⏳ جاري جلب وتحليل بيانات "' + ticker + '"...');
   try{
-    const intradayResult = await fetchYahoo(ticker, '1d', '5m');
+    const intradayResult = await fetchYahoo(ticker);
     const built = buildFromYahoo(intradayResult, ticker);
     currentData = built;
     render(built);
@@ -241,8 +240,8 @@ $('applyManual').addEventListener('click', ()=>{
   setStatus('✅ تم تحليل البيانات اليدوية.');
 });
 
-async function fetchYahoo(ticker, range, interval){
-  const target = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(ticker)}?range=${range}&interval=${interval}`;
+async function fetchYahoo(ticker){
+  const target = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(ticker)}?range=5d&interval=1d`;
   const proxies = [
     'https://corsproxy.io/?' + encodeURIComponent(target),
     'https://api.allorigins.win/raw?url=' + encodeURIComponent(target)
@@ -256,22 +255,37 @@ async function fetchYahoo(ticker, range, interval){
       if(result) return result;
     }catch(e){}
   }
-  throw new Error('فشل الجلب');
+  throw new Error('فشل جلب البيانات');
 }
 
 function buildFromYahoo(res, ticker){
   const meta = res.meta || {};
   const q = res.indicators?.quote?.[0] || {};
-  const closes = (q.close || []).filter(x=>x!=null);
-  const highs = (q.high||[]).filter(x=>x!=null);
-  const lows = (q.low||[]).filter(x=>x!=null);
-  const opens = (q.open||[]).filter(x=>x!=null);
+  
+  const closes = (q.close || []).filter(x => x !== null && !isNaN(x));
+  const highs = (q.high || []).filter(x => x !== null && !isNaN(x));
+  const lows = (q.low || []).filter(x => x !== null && !isNaN(x));
+  const opens = (q.open || []).filter(x => x !== null && !isNaN(x));
 
-  const last = meta.regularMarketPrice ?? closes.slice(-1)[0];
-  const prevClose = meta.chartPreviousClose ?? meta.previousClose ?? last;
-  const dayHigh = meta.regularMarketDayHigh ?? Math.max(...highs);
-  const dayLow = meta.regularMarketDayLow ?? Math.min(...lows);
-  const dayOpen = opens[0] ?? prevClose;
+  const last = meta.regularMarketPrice ?? closes.slice(-1)[0] ?? 0;
+  const prevClose = meta.chartPreviousClose ?? meta.previousClose ?? (closes.length > 1 ? closes[closes.length - 2] : last);
+
+  let dayHigh = meta.regularMarketDayHigh;
+  if (!dayHigh || isNaN(dayHigh)) {
+    dayHigh = highs.length > 0 ? Math.max(...highs) : Math.max(last, prevClose);
+  }
+
+  let dayLow = meta.regularMarketDayLow;
+  if (!dayLow || isNaN(dayLow)) {
+    dayLow = lows.length > 0 ? Math.min(...lows) : Math.min(last, prevClose);
+  }
+
+  const dayOpen = opens.slice(-1)[0] ?? meta.regularMarketDayOpen ?? prevClose;
+  
+  // حماية البيانات لضمان عدم خروج Infinity
+  dayHigh = Math.max(dayHigh, last, dayOpen);
+  dayLow = Math.min(dayLow, last, dayOpen);
+
   const volume = meta.regularMarketVolume ?? null;
 
   return {
@@ -284,7 +298,7 @@ function buildFromYahoo(res, ticker){
 function computeAnalysis(d){
   const {open,high,low,close,prevClose} = d;
   
-  // Pivot Points Calculation
+  // حساب مستويات نقطة الارتكاز Pivot Points مع الحماية من أخطاء الحساب
   const pivot = (high + low + close) / 3;
   const r1 = (2 * pivot) - low;
   const s1 = (2 * pivot) - high;
@@ -303,7 +317,7 @@ function computeAnalysis(d){
 
   let target = close >= pivot ? (close < r1 ? r1 : r2) : r1;
   let stop = close >= pivot ? s1 : s2;
-  const expectedReturn = ((target - close) / close * 100);
+  const expectedReturn = close > 0 ? ((target - close) / close * 100) : 0;
 
   let confidence = Math.max(40, Math.min(90, Math.round(50 + Math.abs(pct)*3 + (trendUp ? 10 : -5))));
 
@@ -500,7 +514,6 @@ $('downloadBtn').addEventListener('click', ()=>{
   link.click();
 });
 
-// تشغيل التحليل الافتراضي عند فتح الصفحة مباشرة
 window.addEventListener('load', runAnalysis);
 </script>
 </body>
