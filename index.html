@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Technical Stock Analyzer - TradingView</title>
+<title>Medium-Term Stock Investment Analyzer</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;800&display=swap" rel="stylesheet">
 <style>
@@ -13,7 +13,6 @@
     --panel-2: #1c2230;
     --line: #2a3347;
     --green: #26a69a;
-    --green-glow: rgba(38, 166, 154, 0.2);
     --red: #ef5350;
     --amber: #ffb74d;
     --text: #f0f3f8;
@@ -27,7 +26,6 @@
     --panel-2: #1e293b;
     --line: #334155;
     --green: #10b981;
-    --green-glow: rgba(16, 185, 129, 0.2);
     --red: #f43f5e;
     --amber: #f59e0b;
     --text: #f8fafc;
@@ -42,55 +40,48 @@
     color: var(--text);
     font-family: 'Inter', sans-serif;
     padding: 20px;
-    transition: background 0.3s, color 0.3s;
   }
-  .wrap { max-width: 800px; margin: 0 auto; }
+  .wrap { max-width: 850px; margin: 0 auto; }
   
   .header {
     display: flex; justify-content: space-between; align-items: center;
     margin-bottom: 20px; flex-wrap: wrap; gap: 10px;
   }
-  .header h1 { margin: 0; font-size: 22px; font-weight: 800; color: var(--text); }
+  .header h1 { margin: 0; font-size: 22px; font-weight: 800; }
   .theme-switch {
     display: flex; gap: 8px; background: var(--panel); padding: 4px; border-radius: 10px; border: 1px solid var(--line);
   }
   .theme-btn {
     background: transparent; border: none; color: var(--muted); padding: 6px 12px;
-    border-radius: 6px; cursor: pointer; font-size: 13px; font-family: inherit; font-weight: 700;
+    border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 700;
   }
   .theme-btn.active { background: var(--accent); color: #fff; }
 
   .toolbar {
     display: flex; flex-wrap: wrap; gap: 10px; align-items: center;
     background: var(--panel); border: 1px solid var(--line); border-radius: 16px;
-    padding: 16px; margin-bottom: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+    padding: 16px; margin-bottom: 16px;
   }
   .toolbar input {
     background: var(--panel-2); border: 1px solid var(--line); color: var(--text);
-    border-radius: 10px; padding: 12px 16px; font-family: inherit; font-size: 16px; flex: 1; min-width: 160px;
-    outline: none; transition: border-color 0.2s;
+    border-radius: 10px; padding: 12px 16px; font-size: 16px; flex: 1; min-width: 160px; outline: none;
   }
-  .toolbar input:focus { border-color: var(--accent); }
   .toolbar button {
     background: var(--accent); color: #ffffff; border: none; border-radius: 10px;
-    padding: 12px 22px; font-family: inherit; font-weight: 800; font-size: 15px; cursor: pointer;
-    transition: transform 0.1s, opacity 0.2s;
+    padding: 12px 22px; font-weight: 800; font-size: 15px; cursor: pointer;
   }
-  .toolbar button:active { transform: scale(0.98); }
-  .toolbar button.secondary {
-    background: transparent; color: var(--text); border: 1px solid var(--line);
-  }
-  .status { font-size: 13.5px; color: var(--muted); width: 100%; margin-top: 4px; display: flex; align-items: center; gap: 6px; }
+  .toolbar button.secondary { background: transparent; color: var(--text); border: 1px solid var(--line); }
+  .status { font-size: 13.5px; color: var(--muted); width: 100%; margin-top: 4px; }
   .status.err { color: var(--red); }
 
   .card {
     background: var(--panel); border: 1px solid var(--line); border-radius: 16px;
-    padding: 20px; margin-bottom: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    padding: 20px; margin-bottom: 16px;
   }
-  .card h2 { margin: 0 0 16px; font-size: 17px; color: var(--muted); font-weight: 700; display: flex; align-items: center; gap: 8px; }
+  .card h2 { margin: 0 0 16px; font-size: 17px; color: var(--muted); font-weight: 700; }
   .head-row { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; flex-wrap: wrap; }
-  .title-block .ticker { color: var(--green); font-size: 34px; font-weight: 800; letter-spacing: 0.5px; }
-  .date-box { background: var(--panel-2); border: 1px solid var(--line); border-radius: 10px; padding: 8px 14px; font-size: 13px; color: var(--muted); text-align: center; }
+  .title-block .ticker { color: var(--green); font-size: 34px; font-weight: 800; }
+  .date-box { background: var(--panel-2); border: 1px solid var(--line); border-radius: 10px; padding: 8px 14px; font-size: 13px; color: var(--muted); }
   
   .price-row { display: flex; gap: 20px; align-items: baseline; margin-top: 8px; flex-wrap: wrap; }
   .price-row .last { font-size: 42px; font-weight: 800; }
@@ -116,12 +107,9 @@
     display: inline-flex; align-items: center; gap: 6px; background: var(--panel-2);
     border: 1px solid var(--line); border-radius: 999px; padding: 6px 16px; font-size: 14px; font-weight: 700;
   }
-  .stars { color: var(--amber); font-size: 22px; letter-spacing: 2px; }
-  .stars .off { color: var(--line); }
-
   .manual-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: 12px; }
   .manual-grid label { font-size: 12px; color: var(--muted); display: block; margin-bottom: 4px; }
-  .manual-grid input { width: 100%; background: var(--panel-2); border: 1px solid var(--line); color: var(--text); border-radius: 8px; padding: 10px; font-family: inherit; }
+  .manual-grid input { width: 100%; background: var(--panel-2); border: 1px solid var(--line); color: var(--text); border-radius: 8px; padding: 10px; }
   
   .hidden { display: none !important; }
   .strategy-box {
@@ -134,7 +122,7 @@
 <div class="wrap">
 
   <div class="header">
-    <h1>📈 Technical Stock Analyzer (TradingView)</h1>
+    <h1>📈 Medium-Term Investment Analyzer</h1>
     <div class="theme-switch">
       <button class="theme-btn active" onclick="setTheme('dark', event)">Dark (Neon)</button>
       <button class="theme-btn" onclick="setTheme('slate', event)">Modern Slate</button>
@@ -142,24 +130,28 @@
   </div>
 
   <div class="toolbar">
-    <input id="tickerInput" placeholder="Ticker (e.g. ETEL, FWRY, COMI)" value="ETEL">
+    <input id="tickerInput" placeholder="Ticker (e.g. ORAS, ETEL, COMI)" value="ORAS">
     <button id="fetchBtn">🔍 Analyze via TradingView</button>
     <button id="manualBtn" class="secondary">✍️ Manual Entry</button>
-    <div id="status" class="status">Enter ticker symbol and press "Analyze".</div>
+    <div id="status" class="status">Enter ticker symbol to run medium-term trend & volume analysis.</div>
   </div>
 
   <!-- Manual Entry Panel -->
   <div id="manualPanel" class="card hidden">
-    <h2>✍️ Manual Session Entry</h2>
+    <h2>✍️ Manual Data Entry (Medium-Term Parameters)</h2>
     <div class="manual-grid">
-      <div><label>Open Price</label><input id="m_open" type="number" step="0.01"></div>
-      <div><label>High Price</label><input id="m_high" type="number" step="0.01"></div>
-      <div><label>Low Price</label><input id="m_low" type="number" step="0.01"></div>
-      <div><label>Close / Last Price</label><input id="m_close" type="number" step="0.01"></div>
+      <div><label>Current Price</label><input id="m_close" type="number" step="0.01"></div>
       <div><label>Previous Close</label><input id="m_prev" type="number" step="0.01"></div>
-      <div><label>Volume</label><input id="m_vol" type="number" step="1"></div>
+      <div><label>Current Session Volume</label><input id="m_vol" type="number" step="1"></div>
+      <div><label>20-Day Avg Volume</label><input id="m_avgvol" type="number" step="1"></div>
+      <div><label>EMA 20</label><input id="m_ema20" type="number" step="0.01"></div>
+      <div><label>EMA 50</label><input id="m_ema50" type="number" step="0.01"></div>
+      <div><label>EMA 200</label><input id="m_ema200" type="number" step="0.01"></div>
+      <div><label>RSI (14)</label><input id="m_rsi" type="number" step="0.1"></div>
+      <div><label>MACD Line</label><input id="m_macd" type="number" step="0.01"></div>
+      <div><label>MACD Signal Line</label><input id="m_macdsig" type="number" step="0.01"></div>
     </div>
-    <button id="applyManual" style="margin-top:14px; width:100%; background:var(--green); color:#fff; border:none; border-radius:10px; padding:12px; font-family:inherit; font-weight:800; cursor:pointer;">Generate Analysis</button>
+    <button id="applyManual" style="margin-top:14px; width:100%; background:var(--green); color:#fff; border:none; border-radius:10px; padding:12px; font-weight:800; cursor:pointer;">Generate Investment Analysis</button>
   </div>
 
   <!-- Main Analysis Section -->
@@ -178,59 +170,51 @@
         <div class="chg" id="outChg">--</div>
       </div>
       <div class="grid4" style="margin-top:20px;">
-        <div class="stat"><div class="lbl">High</div><div class="val" id="outHigh">--</div></div>
-        <div class="stat"><div class="lbl">Low</div><div class="val" id="outLow">--</div></div>
-        <div class="stat"><div class="lbl">Open</div><div class="val" id="outOpen">--</div></div>
-        <div class="stat"><div class="lbl">Volume</div><div class="val" id="outVol">--</div></div>
+        <div class="stat"><div class="lbl">Session Vol</div><div class="val" id="outVol">--</div></div>
+        <div class="stat"><div class="lbl">20D Avg Vol</div><div class="val" id="outAvgVol">--</div></div>
+        <div class="stat"><div class="lbl">Relative Vol (RVOL)</div><div class="val" id="outRvol">--</div></div>
+        <div class="stat"><div class="lbl">Volume Trigger</div><div class="val" id="outVolStatus">--</div></div>
       </div>
     </div>
 
+    <!-- Technical Indicators Panel -->
     <div class="card">
-      <h2>🎯 Support & Resistance Levels (Pivot Points)</h2>
+      <h2>⚙️ Medium-Term Technical Indicators</h2>
       <table class="levels">
-        <tr><td>Resistance 2 (R2)</td><td id="lvlR2" style="color:var(--red)">--</td></tr>
-        <tr><td>Resistance 1 (R1)</td><td id="lvlR1" style="color:var(--red)">--</td></tr>
-        <tr><td>Pivot Point (PP)</td><td id="lvlP" style="color:var(--amber)">--</td></tr>
-        <tr><td>Support 1 (S1)</td><td id="lvlS1" style="color:var(--green)">--</td></tr>
-        <tr><td>Support 2 (S2)</td><td id="lvlS2" style="color:var(--green)">--</td></tr>
+        <tr><td>RSI (14-period)</td><td id="valRsi">--</td></tr>
+        <tr><td>MACD (12, 26, 9)</td><td id="valMacd">--</td></tr>
+        <tr><td>EMA 20 (Short Trend)</td><td id="valEma20">--</td></tr>
+        <tr><td>EMA 50 (Medium Trend)</td><td id="valEma50">--</td></tr>
+        <tr><td>EMA 200 (Long Structural Base)</td><td id="valEma200">--</td></tr>
       </table>
     </div>
 
     <div class="card">
-      <h2>📊 Trend Evaluation</h2>
+      <h2>📊 Market Structure & Trend Alignment</h2>
       <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px;">
         <span class="badge" id="trendBadge">--</span>
-        <span class="stars" id="ratingStars"></span>
+        <span class="badge" id="rsiBadge">--</span>
       </div>
+      <ul class="notes" id="techNotes" style="margin-top:14px;"></ul>
     </div>
 
+    <!-- Medium-Term Investment Plan -->
     <div class="card">
-      <h2>👁️ Technical Strategy & Insights</h2>
-      <div class="strategy-box">
-        <strong>📋 Pivot Point Momentum Strategy:</strong><br>
-        Monitors intraday direction based on positioning relative to the **Pivot Point (PP)**:
-        <br>• <strong>Above Pivot:</strong> Signals bullish momentum targeting $R_1$, then $R_2$.
-        <br>• <strong>Below Pivot:</strong> Indicates selling pressure targeting support levels $S_1$, then $S_2$.
-      </div>
-      <ul class="notes" id="techNotes"></ul>
-    </div>
-
-    <div class="card">
-      <h2>✅ Plan Summary & Recommendation</h2>
+      <h2>🎯 Medium-Term Entry & Position Parameters</h2>
       <div class="grid4">
-        <div class="stat"><div class="lbl">Stop Loss</div><div class="val" id="outStop" style="color:var(--red)">--</div></div>
-        <div class="stat"><div class="lbl">Price Target</div><div class="val" id="outTarget" style="color:var(--green)">--</div></div>
-        <div class="stat"><div class="lbl">Est. Return</div><div class="val" id="outReturn">--</div></div>
-        <div class="stat"><div class="lbl">Confidence</div><div class="val" id="outConf">--</div></div>
+        <div class="stat"><div class="lbl">Ideal Buy Zone</div><div class="val" id="outBuyZone" style="color:var(--green)">--</div></div>
+        <div class="stat"><div class="lbl">Volume Confirmation</div><div class="val" id="outVolTrigger">--</div></div>
+        <div class="stat"><div class="lbl">Medium Target</div><div class="val" id="outTarget" style="color:var(--green)">--</div></div>
+        <div class="stat"><div class="lbl">Structural Stop Loss</div><div class="val" id="outStop" style="color:var(--red)">--</div></div>
       </div>
       <div style="margin-top:16px; font-size:16.5px; font-weight:800;" id="outRecTitle">--</div>
       <ul class="notes" id="recNotes" style="margin-top:8px;"></ul>
     </div>
 
     <div class="card">
-      <h2>🖼️ Exportable Image Card</h2>
-      <canvas id="shareCanvas" width="1080" height="1350"></canvas>
-      <button id="downloadBtn" style="margin-top:14px; width:100%; background:var(--green); color:#fff; border:none; border-radius:10px; padding:14px; font-family:inherit; font-weight:800; font-size:16px; cursor:pointer;">⬇️ Download Report Image</button>
+      <h2>🖼️ Exportable Investment Card</h2>
+      <canvas id="shareCanvas" width="1080" height="1450"></canvas>
+      <button id="downloadBtn" style="margin-top:14px; width:100%; background:var(--green); color:#fff; border:none; border-radius:10px; padding:14px; font-size:16px; font-weight:800; cursor:pointer;">⬇️ Download Report Image</button>
     </div>
 
   </div>
@@ -256,9 +240,7 @@ function setStatus(msg, isErr) {
   el.className = 'status' + (isErr ? ' err' : '');
 }
 
-$('tickerInput').addEventListener('keypress', (e) => {
-  if (e.key === 'Enter') runAnalysis();
-});
+$('tickerInput').addEventListener('keypress', (e) => { if (e.key === 'Enter') runAnalysis(); });
 $('fetchBtn').addEventListener('click', runAnalysis);
 
 // Fetch Data via Cloudflare Worker Proxy
@@ -266,13 +248,16 @@ async function fetchTradingViewData(ticker) {
   const cleanSymbol = ticker.trim().toUpperCase().replace('.CA', '');
   const tvUrl = "https://scanner.tradingview.com/egypt/scan";
   
-  // PASTE YOUR CLOUDFLARE WORKER URL HERE:
-  const workerProxy = "https://my-stock-proxy.amr7-elsherif.workers.dev/"; 
+  // REPLACE WITH YOUR CLOUDFLARE WORKER URL:
+  const workerProxy = "https://YOUR-WORKER-NAME.YOUR-SUBDOMAIN.workers.dev"; 
   const proxyEndpoint = `${workerProxy}/?url=${encodeURIComponent(tvUrl)}`;
 
   const payload = {
     "symbols": { "tickers": [`EGX:${cleanSymbol}`] },
-    "columns": ["name", "description", "close", "change", "change_abs", "high", "low", "open", "volume"]
+    "columns": [
+      "name", "description", "close", "change_abs", "volume", "average_volume_20d",
+      "EMA20", "EMA50", "EMA200", "RSI", "MACD.macd", "MACD.signal"
+    ]
   };
 
   const response = await fetch(proxyEndpoint, {
@@ -281,25 +266,26 @@ async function fetchTradingViewData(ticker) {
     body: JSON.stringify(payload)
   });
 
-  if (!response.ok) {
-    throw new Error(`Worker returned status ${response.status}`);
-  }
-
+  if (!response.ok) throw new Error(`Worker returned status ${response.status}`);
   const data = await response.json();
   
   if (data && data.data && data.data.length > 0) {
     const d = data.data[0].d;
     const close = d[2];
-    const changeAbs = d[4];
+    const changeAbs = d[3];
     return {
       ticker: `${cleanSymbol}.CA`,
       name: d[1] || cleanSymbol,
       close: close,
-      high: d[5] || close,
-      low: d[6] || close,
-      open: d[7] || close,
       prevClose: close - changeAbs,
-      volume: d[8] || 0
+      volume: d[4] || 0,
+      avgVolume: d[5] || 0,
+      ema20: d[6] || close,
+      ema50: d[7] || close,
+      ema200: d[8] || close,
+      rsi: d[9] || 50,
+      macd: d[10] || 0,
+      macdSignal: d[11] || 0
     };
   } else {
     throw new Error("No market data returned for " + cleanSymbol);
@@ -310,90 +296,85 @@ async function runAnalysis() {
   const ticker = $('tickerInput').value.trim().toUpperCase();
   if (!ticker) { setStatus('Please enter a valid ticker symbol.', true); return; }
 
-  setStatus('⏳ Fetching live prices from TradingView...');
+  setStatus('⏳ Fetching medium-term indicators & volume metrics from TradingView...');
   try {
     const built = await fetchTradingViewData(ticker);
     currentData = built;
     render(built);
-    setStatus('✅ Live TradingView data loaded successfully');
+    setStatus('✅ Live TradingView medium-term analysis loaded successfully');
     $('manualPanel').classList.add('hidden');
   } catch (err) {
     console.error(err);
-    setStatus(`⚠️ Fetch failed. Verify your Cloudflare Worker URL or use Manual Entry.`, true);
+    setStatus(`⚠️ Fetch failed. Verify Cloudflare Worker URL or enter parameters manually.`, true);
     $('manualPanel').classList.remove('hidden');
   }
 }
 
-$('manualBtn').addEventListener('click', () => {
-  $('manualPanel').classList.toggle('hidden');
-});
+$('manualBtn').addEventListener('click', () => $('manualPanel').classList.toggle('hidden'));
 
 $('applyManual').addEventListener('click', () => {
   const ticker = $('tickerInput').value.trim().toUpperCase() || 'STOCK';
-  const o = parseFloat($('m_open').value);
-  const h = parseFloat($('m_high').value);
-  const l = parseFloat($('m_low').value);
   const c = parseFloat($('m_close').value);
   const p = parseFloat($('m_prev').value) || c;
-  const v = parseFloat($('m_vol').value) || null;
+  const v = parseFloat($('m_vol').value) || 0;
+  const avgV = parseFloat($('m_avgvol').value) || 1;
+  const e20 = parseFloat($('m_ema20').value) || c;
+  const e50 = parseFloat($('m_ema50').value) || c;
+  const e200 = parseFloat($('m_ema200').value) || c;
+  const rsi = parseFloat($('m_rsi').value) || 50;
+  const macd = parseFloat($('m_macd').value) || 0;
+  const macdSig = parseFloat($('m_macdsig').value) || 0;
 
-  if ([o, h, l, c].some(x => isNaN(x))) {
-    setStatus('Please input valid numeric values.', true);
-    return;
-  }
-  const built = { ticker: ticker.endsWith('.CA') ? ticker : `${ticker}.CA`, name: ticker, open: o, high: h, low: l, close: c, prevClose: p, volume: v };
+  if (isNaN(c)) { setStatus('Please input valid numeric values for price.', true); return; }
+
+  const built = {
+    ticker: ticker.endsWith('.CA') ? ticker : `${ticker}.CA`,
+    name: ticker, close: c, prevClose: p, volume: v, avgVolume: avgV,
+    ema20: e20, ema50: e50, ema200: e200, rsi: rsi, macd: macd, macdSignal: macdSig
+  };
   currentData = built;
   render(built);
   setStatus('✅ Report calculated using manual inputs.');
 });
 
 function computeAnalysis(d) {
-  const { open, high, low, close, prevClose } = d;
-
-  const pivot = (high + low + close) / 3;
-  const r1 = (2 * pivot) - low;
-  const s1 = (2 * pivot) - high;
-  const r2 = pivot + (high - low);
-  const s2 = pivot - (high - low);
+  const { close, prevClose, volume, avgVolume, ema20, ema50, ema200, rsi, macd, macdSignal } = d;
 
   const pct = prevClose ? ((close - prevClose) / prevClose * 100) : 0;
-  const trendUp = close >= pivot;
+  const rvol = avgVolume > 0 ? (volume / avgVolume) : 1;
+  const volumeTriggerMet = rvol >= 1.5;
 
-  let rating = 3;
-  if (close > pivot) rating++;
-  if (close > r1) rating++;
-  if (close < pivot) rating--;
-  if (close < s1) rating--;
-  rating = Math.max(1, Math.min(5, rating));
+  const aboveEma200 = close >= ema200;
+  const goldenCross = ema50 >= ema200;
+  const macdBullish = macd > macdSignal;
 
-  let target = close >= pivot ? (close < r1 ? r1 : r2) : r1;
-  let stop = close >= pivot ? s1 : s2;
-  const expectedReturn = close > 0 ? ((target - close) / close * 100) : 0;
+  // Medium-Term Entry Zone (Between EMA20 and EMA50 or pullback support)
+  const buyZoneLow = Math.min(ema20, ema50);
+  const buyZoneHigh = Math.max(ema20, close);
 
-  let confidence = Math.max(45, Math.min(92, Math.round(55 + Math.abs(pct) * 2.5 + (trendUp ? 10 : -5))));
+  const stopLoss = Math.min(ema50, ema200) * 0.95; // 5% below key structural EMA
+  const targetPrice = close * (aboveEma200 ? 1.25 : 1.15); // 15-25% medium-term target horizon
 
-  let recTitle, recNotes;
-  if (close >= r1 * 0.995) {
-    recTitle = '⏳ Testing Resistance 1 (R1)';
-    recNotes = [
-      `Stock is testing key resistance around ${fmt(r1)} EGP. Sustaining above opens targets toward ${fmt(r2)}.`,
-      'Monitor trading volume to confirm breakout validity.'
-    ];
-  } else if (close <= s1 * 1.005) {
-    recTitle = '⚠️ Trading Near Support 1 (S1)';
-    recNotes = [
-      `Price is touching critical support at ${fmt(s1)} EGP.`,
-      `A clean breakdown requires strict adherence to stop loss around ${fmt(s2)}.`
-    ];
-  } else {
-    recTitle = trendUp ? '📈 Bullish Momentum Above Pivot' : '📉 Bearish Pressure Below Pivot';
-    recNotes = [
-      trendUp ? `Trading above Pivot (${fmt(pivot)}) favors further upside expansion.` : `Trading below Pivot (${fmt(pivot)}) maintains sell-side pressure.`,
-      `Target Objective: ${fmt(target)} | Suggested Stop Loss: ${fmt(stop)}`
-    ];
+  let trendStatus = 'Neutral / Consolidation';
+  if (aboveEma200 && goldenCross) trendStatus = '🚀 Strong Bullish Structural Uptrend';
+  else if (aboveEma200) trendStatus = '📈 Bullish Medium-Term Bias';
+  else trendStatus = '📉 Bearish Structural Bias (Below EMA 200)';
+
+  let rsiStatus = 'Neutral';
+  if (rsi >= 70) rsiStatus = '🔥 Overbought (>70)';
+  else if (rsi <= 30) rsiStatus = '🟢 Oversold (<30)';
+  else if (rsi >= 55) rsiStatus = '📈 Bullish Momentum';
+
+  let recTitle = 'Hold / Await Volume Confirmation';
+  if (aboveEma200 && macdBullish && volumeTriggerMet) {
+    recTitle = '🟢 STRONG BUY: Volume Breakout Confirmed';
+  } else if (aboveEma200 && rvol < 1.0) {
+    recTitle = '⏳ ACCUMULATE ON PULLBACK: Volume Below Trigger';
+  } else if (!aboveEma200) {
+    recTitle = '⚠️ AVOID / REDUCE: Price Below 200 EMA';
   }
 
-  return { pivot, r1, s1, r2, s2, pct, trendUp, rating, target, stop, expectedReturn, confidence, recTitle, recNotes };
+  return { pct, rvol, volumeTriggerMet, trendStatus, rsiStatus, buyZoneLow, buyZoneHigh, stopLoss, targetPrice, macdBullish, recTitle };
 }
 
 function render(d) {
@@ -410,47 +391,46 @@ function render(d) {
   chgEl.textContent = (chgVal >= 0 ? '+' : '') + fmt(chgVal) + ' (' + (a.pct >= 0 ? '+' : '') + a.pct.toFixed(2) + '%)';
   chgEl.className = 'chg ' + (chgVal >= 0 ? 'up' : 'down');
 
-  $('outHigh').textContent = fmt(d.high);
-  $('outLow').textContent = fmt(d.low);
-  $('outOpen').textContent = fmt(d.open);
   $('outVol').textContent = d.volume ? Number(d.volume).toLocaleString('en-US') : '--';
+  $('outAvgVol').textContent = d.avgVolume ? Number(d.avgVolume).toLocaleString('en-US') : '--';
+  $('outRvol').textContent = `${a.rvol.toFixed(2)}x`;
+  
+  const vStat = $('outVolStatus');
+  vStat.textContent = a.volumeTriggerMet ? '🔥 CONFIRMED (>1.5x)' : '⏳ LOW (Waiting Trigger)';
+  vStat.style.color = a.volumeTriggerMet ? 'var(--green)' : 'var(--amber)';
 
-  $('lvlR2').textContent = fmt(a.r2);
-  $('lvlR1').textContent = fmt(a.r1);
-  $('lvlP').textContent = fmt(a.pivot);
-  $('lvlS1').textContent = fmt(a.s1);
-  $('lvlS2').textContent = fmt(a.s2);
+  $('valRsi').textContent = `${fmt(d.rsi)} (${a.rsiStatus})`;
+  $('valMacd').textContent = `${fmt(d.macd)} / Signal: ${fmt(d.macdSignal)} (${a.macdBullish ? 'Bullish Cross' : 'Bearish Cross'})`;
+  $('valEma20').textContent = fmt(d.ema20);
+  $('valEma50').textContent = fmt(d.ema50);
+  $('valEma200').textContent = fmt(d.ema200);
 
-  $('trendBadge').textContent = a.trendUp ? '📈 Bullish Trend (Above PP)' : '📉 Bearish Trend (Below PP)';
-  $('trendBadge').style.color = a.trendUp ? 'var(--green)' : 'var(--red)';
-
-  const starsEl = $('ratingStars');
-  starsEl.innerHTML = '';
-  for (let i = 0; i < 5; i++) {
-    const s = document.createElement('span');
-    s.textContent = '★';
-    if (i >= a.rating) s.className = 'off';
-    starsEl.appendChild(s);
-  }
+  $('trendBadge').textContent = a.trendStatus;
+  $('rsiBadge').textContent = `RSI: ${fmt(d.rsi)}`;
 
   const notesEl = $('techNotes');
   notesEl.innerHTML = '';
   const notes = [
-    `Daily Pivot Point established at ${fmt(a.pivot)} EGP.`,
-    a.trendUp ? `Trading above Pivot confirms technical strength toward ${fmt(a.r1)}.` : `Trading below Pivot signals potential weakness targeting ${fmt(a.s1)}.`,
-    `Expected intraday trading range: ${fmt(a.s2)} – ${fmt(a.r2)}.`
+    `Medium-Term Trend: Price is currently ${d.close >= d.ema200 ? 'above' : 'below'} the structural 200 EMA (${fmt(d.ema200)} EGP).`,
+    `MACD Alignment: ${a.macdBullish ? 'MACD Line is operating ABOVE Signal line (Positive Momentum).' : 'MACD Line is operating BELOW Signal line (Bearish Momentum).'}`,
+    `Volume Trigger Rule: Session volume is ${a.rvol.toFixed(2)}x relative to its 20-day average. ${a.volumeTriggerMet ? 'Breakout is backed by institutional buying volume.' : 'Requires a minimum 1.5x volume expansion to validate position entry.'}`
   ];
   notes.forEach(n => { const li = document.createElement('li'); li.textContent = n; notesEl.appendChild(li); });
 
-  $('outStop').textContent = fmt(a.stop);
-  $('outTarget').textContent = fmt(a.target);
-  $('outReturn').textContent = (a.expectedReturn >= 0 ? '+' : '') + a.expectedReturn.toFixed(2) + '%';
-  $('outConf').textContent = a.confidence + '%';
+  $('outBuyZone').textContent = `${fmt(a.buyZoneLow)} - ${fmt(a.buyZoneHigh)}`;
+  $('outVolTrigger').textContent = `${Number(d.avgVolume * 1.5).toLocaleString('en-US')} shares`;
+  $('outTarget').textContent = fmt(a.targetPrice);
+  $('outStop').textContent = fmt(a.stopLoss);
   $('outRecTitle').textContent = a.recTitle;
 
   const recNotesEl = $('recNotes');
   recNotesEl.innerHTML = '';
-  a.recNotes.forEach(n => { const li = document.createElement('li'); li.textContent = n; recNotesEl.appendChild(li); });
+  const recNotes = [
+    `Ideal Entry Strategy: Accumulate within the Buy Zone (${fmt(a.buyZoneLow)} - ${fmt(a.buyZoneHigh)} EGP).`,
+    `Volume Entry Condition: Execute entry when volume breaches the trigger threshold of ${Number(d.avgVolume * 1.5).toLocaleString('en-US')} shares.`,
+    `Risk Control: Maintain medium-term structural Stop Loss at ${fmt(a.stopLoss)} EGP.`
+  ];
+  recNotes.forEach(n => { const li = document.createElement('li'); li.textContent = n; recNotesEl.appendChild(li); });
 
   drawShareCanvas(d, a);
 }
@@ -459,7 +439,6 @@ function drawShareCanvas(d, a) {
   const cv = $('shareCanvas');
   const ctx = cv.getContext('2d');
   const W = cv.width, H = cv.height;
-  ctx.direction = 'ltr';
 
   const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
   const bgColor = isDark ? '#151922' : '#0f172a';
@@ -474,7 +453,7 @@ function drawShareCanvas(d, a) {
   const leftX = 60;
   ctx.textAlign = 'left';
   ctx.fillStyle = mutedColor; ctx.font = '28px Inter, sans-serif';
-  ctx.fillText('Live Technical Report Card', leftX, 80);
+  ctx.fillText('Medium-Term Investment Report', leftX, 80);
   ctx.fillStyle = greenColor; ctx.font = '800 60px Inter, sans-serif';
   ctx.fillText(d.ticker, leftX, 150);
   ctx.fillStyle = textColor; ctx.font = '26px Inter, sans-serif';
@@ -487,52 +466,58 @@ function drawShareCanvas(d, a) {
   const chgVal = d.close - d.prevClose;
   ctx.textAlign = 'left';
   ctx.fillStyle = textColor; ctx.font = '800 58px Inter, sans-serif';
-  ctx.fillText(fmt(d.close), leftX, 260);
+  ctx.fillText(fmt(d.close) + ' EGP', leftX, 260);
   ctx.fillStyle = chgVal >= 0 ? greenColor : redColor; ctx.font = '700 28px Inter, sans-serif';
   ctx.fillText((chgVal >= 0 ? '+' : '') + fmt(chgVal) + ' (' + (a.pct >= 0 ? '+' : '') + a.pct.toFixed(2) + '%)', leftX, 305);
 
-  function statBox(x, y, w, h, label, val) {
+  function statBox(x, y, w, h, label, val, color) {
     ctx.fillStyle = panelColor; roundRect(ctx, x, y, w, h, 12); ctx.fill();
     ctx.textAlign = 'center';
     ctx.fillStyle = mutedColor; ctx.font = '20px Inter, sans-serif';
     ctx.fillText(label, x + w / 2, y + 34);
-    ctx.fillStyle = textColor; ctx.font = '800 26px Inter, sans-serif';
+    ctx.fillStyle = color || textColor; ctx.font = '800 24px Inter, sans-serif';
     ctx.fillText(val, x + w / 2, y + 70);
   }
 
   const gy = 350, gw = (W - 120 - 30) / 4, gh = 90;
-  statBox(60, gy, gw, gh, 'High', fmt(d.high));
-  statBox(60 + gw + 10, gy, gw, gh, 'Low', fmt(d.low));
-  statBox(60 + 2 * (gw + 10), gy, gw, gh, 'Open', fmt(d.open));
-  statBox(60 + 3 * (gw + 10), gy, gw, gh, 'Close', fmt(d.close));
+  statBox(60, gy, gw, gh, 'Session Vol', d.volume ? Number(d.volume).toLocaleString() : '--');
+  statBox(60 + gw + 10, gy, gw, gh, '20D Avg Vol', d.avgVolume ? Number(d.avgVolume).toLocaleString() : '--');
+  statBox(60 + 2 * (gw + 10), gy, gw, gh, 'Relative Vol', `${a.rvol.toFixed(2)}x`);
+  statBox(60 + 3 * (gw + 10), gy, gw, gh, 'Vol Trigger', a.volumeTriggerMet ? 'PASSED' : 'WAITING', a.volumeTriggerMet ? greenColor : '#ffb74d');
 
   let ly = 500;
   ctx.textAlign = 'left'; ctx.fillStyle = mutedColor; ctx.font = '700 26px Inter, sans-serif';
-  ctx.fillText('Pivot Levels', leftX, ly);
+  ctx.fillText('Medium-Term Indicators', leftX, ly);
   ly += 40;
-  const levels = [['Resistance 2 (R2)', a.r2, redColor], ['Resistance 1 (R1)', a.r1, redColor], ['Pivot Point (PP)', a.pivot, mutedColor], ['Support 1 (S1)', a.s1, greenColor], ['Support 2 (S2)', a.s2, greenColor]];
+  const levels = [
+    ['RSI (14-period)', `${fmt(d.rsi)} (${a.rsiStatus})`, textColor],
+    ['MACD Status', a.macdBullish ? 'Bullish (Above Signal)' : 'Bearish (Below Signal)', a.macdBullish ? greenColor : redColor],
+    ['EMA 20', fmt(d.ema20), textColor],
+    ['EMA 50', fmt(d.ema50), textColor],
+    ['EMA 200 (Long-Term Base)', fmt(d.ema200), textColor]
+  ];
   levels.forEach(([lbl, val, col]) => {
     ctx.fillStyle = panelColor; roundRect(ctx, 60, ly - 32, W - 120, 50, 10); ctx.fill();
     ctx.textAlign = 'left'; ctx.fillStyle = textColor; ctx.font = '24px Inter, sans-serif';
     ctx.fillText(lbl, leftX + 20, ly);
-    ctx.textAlign = 'right'; ctx.fillStyle = col; ctx.font = '800 26px Inter, sans-serif';
-    ctx.fillText(fmt(val), W - 80, ly);
+    ctx.textAlign = 'right'; ctx.fillStyle = col; ctx.font = '800 24px Inter, sans-serif';
+    ctx.fillText(val, W - 80, ly);
     ly += 60;
   });
 
   ly += 20;
-  ctx.fillStyle = panelColor; roundRect(ctx, 60, ly, W - 120, 200, 14); ctx.fill();
+  ctx.fillStyle = panelColor; roundRect(ctx, 60, ly, W - 120, 210, 14); ctx.fill();
   ctx.textAlign = 'left'; ctx.fillStyle = greenColor; ctx.font = '800 26px Inter, sans-serif';
   ctx.fillText(a.recTitle, leftX + 20, ly + 45);
 
   const rgy = ly + 80;
   const rgw = (W - 120 - 30) / 3;
-  statBox(60, rgy, rgw, 90, 'Stop Loss', fmt(a.stop));
-  statBox(60 + rgw + 15, rgy, rgw, 90, 'Target', fmt(a.target));
-  statBox(60 + 2 * (rgw + 15), rgy, rgw, 90, 'Confidence', a.confidence + '%');
+  statBox(60, rgy, rgw, 90, 'Ideal Buy Zone', `${fmt(a.buyZoneLow)} - ${fmt(a.buyZoneHigh)}`, greenColor);
+  statBox(60 + rgw + 15, rgy, rgw, 90, 'Medium Target', fmt(a.targetPrice), greenColor);
+  statBox(60 + 2 * (rgw + 15), rgy, rgw, 90, 'Stop Loss', fmt(a.stopLoss), redColor);
 
   ctx.textAlign = 'center'; ctx.fillStyle = mutedColor; ctx.font = '18px Inter, sans-serif';
-  ctx.fillText('Data Source: TradingView Engine', W / 2, H - 40);
+  ctx.fillText('Medium-Term Investment Strategy Engine', W / 2, H - 40);
 }
 
 function roundRect(ctx, x, y, w, h, r) {
@@ -541,6 +526,7 @@ function roundRect(ctx, x, y, w, h, r) {
   ctx.arcTo(x + w, y, x + w, y + h, r);
   ctx.arcTo(x + w, y + h, x, y + h, r);
   ctx.arcTo(x, y + h, x, y, r);
+  ctx.arcTo(x, y + h, x, y, r);
   ctx.arcTo(x, y, x + w, y, r);
   ctx.closePath();
 }
@@ -548,7 +534,7 @@ function roundRect(ctx, x, y, w, h, r) {
 $('downloadBtn').addEventListener('click', () => {
   const cv = $('shareCanvas');
   const link = document.createElement('a');
-  link.download = (currentData?.ticker || 'stock') + '-tradingview-report.png';
+  link.download = (currentData?.ticker || 'stock') + '-investment-report.png';
   link.href = cv.toDataURL('image/png');
   link.click();
 });
